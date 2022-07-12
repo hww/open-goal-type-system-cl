@@ -1,0 +1,17 @@
+* Type-System 
+
+** Usage
+
+** Installation
+
+** Author
+
++ Valeriya Pudova (valery.hww@gmail.com)
+
+** Copyright
+
+Copyright (c) 2022 Valeriya Pudova (valery.hww@gmail.com)
+
+** License
+
+Licensed under the LLGPL License.
