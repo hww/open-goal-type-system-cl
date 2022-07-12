@@ -6,3 +6,6 @@
   (is (= 2 (+ 1 1))  "2 equal 2")
   (is (= 2 (+ 1 2)) "2 equal 2")
   )
+
+(defun run-tests-for-ci ()
+  (run! 'my-suite))
