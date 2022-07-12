@@ -1,19 +1,19 @@
-* Type-System 
+# Type-System 
 
 ![CI](https://github.com/3b/ci-example/workflows/CI/badge.svg?branch=master)
 
-** Usage
+## Usage
 
-** Installation
+## Installation
 
-** Author
+## Author
 
 + Valeriya Pudova (valery.hww@gmail.com)
 
-** Copyright
+## Copyright
 
 Copyright (c) 2022 Valeriya Pudova (valery.hww@gmail.com)
 
-** License
+## License
 
 Licensed under the ISL License.
