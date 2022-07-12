@@ -16,4 +16,4 @@ Copyright (c) 2022 Valeriya Pudova (valery.hww@gmail.com)
 
 ## License
 
-Licensed under the ISL License.
+Licensed under the ISC License.
