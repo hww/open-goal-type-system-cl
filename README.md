@@ -1,6 +1,6 @@
 # Type-System 
 
-![CI](https://github.com/3b/ci-example/workflows/CI/badge.svg?branch=master)
+![CI](https://github.com/hww/open-goal-type-system-cl/workflows/CI/badge.svg?branch=master)
 
 ## Usage
 
