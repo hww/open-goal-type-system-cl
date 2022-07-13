@@ -4,6 +4,7 @@
   :license "LLGPL"
   :encoding :utf-8
   :serial t
-  :depends-on (#:type-system #:fiveam)
+  :depends-on (#:type-system #:fiveam #:cl-interpol)
   :components ((:file "tests/package")
-	       (:file "tests/main")))
+	       (:file "tests/main")
+               (:file "tests/typespec-test")))

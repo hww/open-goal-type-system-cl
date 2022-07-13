@@ -1,11 +1,11 @@
 (in-package :type-system.tests)
 
-(def-suite* my-suite)
+(def-suite* main-test)
 
-(test my-test 
+(test dumy-test 
   (is (= 2 (+ 1 1))  "2 equal 2")
-  (is (= 2 (+ 1 2)) "2 equal 2")
   )
 
 (defun run-tests-for-ci ()
-  (run! 'my-suite))
+  (run! 'main-test)
+  (typespec-test))
