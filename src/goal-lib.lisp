@@ -1,4 +1,4 @@
-(in-package :type-system)
+(in-package :goal-lib)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; CONSTANTS
@@ -33,7 +33,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defmacro list-ref (list n)
-  `(nth ,list ,n))
+  `(nth ,n ,list))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; ARRAYS

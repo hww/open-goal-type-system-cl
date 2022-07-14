@@ -7,3 +7,4 @@
 *.x86f
 *~
 .#*
+/tests/*sly-mrepl for sbcl*

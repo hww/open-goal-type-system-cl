@@ -100,15 +100,15 @@
 (defun typespec-substitute-for-method-call (this method-type)
   (define result (typespec-new))
   (if (== (typespec-type this) '-type-)
-      (set-typespec-type! result method-type)
-      (set-typespec-type! result (typespec-type this)))
+      (setf (typespec-type result) method-type)
+      (setf (typespec-type result) (typespec-type this)))
 
   (when (not (null? (typespec-args this)))
-             (set-typespec-args!
-              result
-              (map 'list
-		   (lambda (arg) (typespec-substitute-for-method-call arg method-type))
-                   (typespec-args this))))
+    (setf
+     (typespec-args result)
+     (map 'list
+	  (lambda (arg) (typespec-substitute-for-method-call arg method-type))
+	  (typespec-args this))))
   result)
 
 (defun typespec-is-compatible-child-method (this  implementation child-type)
@@ -144,9 +144,8 @@
 (defun typespec-try-get-tag (this tag)
   (loop for it in (typespec-tags this)
 	do
-	   (if (equal? tag (type-tag-name (car it)))
-	       (return (car it))
-	       (setf it (cdr it)))))
+	   (when (equalp tag (type-tag-name it))
+	       (return it))))
 
 ;; Make error if there is this tag
 
@@ -154,18 +153,18 @@
   (let ((item (typespec-try-get-tag this tag)))
     (cond
       ((not item)
-       (set-typespec-tags! this (cons (make-type-tag tag value)
+       (setf (typespec-tags this) (cons (make-type-tag :name tag :value value)
                                        (typespec-tags this))))
       (else
-       (error (format nil "Attempted to add a duplicate tag {~a} to typespec." tag))))))
+       (error (format nil "Attempted to add a duplicate tag ~a to typespec." tag))))))
 
 ;; Make an error if the tag is not found
 
 (defun typespec-modify-tag (this tag value)
   (let ((item (typespec-try-get-tag this tag)))
     (cond
-      ((not item)   (error (format nil "Attempted to modify  tag {~a} to typespec." tag)))
-      (else         (set-type-tag-value! item value)))))
+      ((not item)   (error (format nil "Attempted to modify non existing tag ~a to typespec ~a." tag this)))
+      (else         (setf (type-tag-value item) value)))))
 
 ;; Find amd modify tag or add new for
 
@@ -173,14 +172,14 @@
   (let ((item (typespec-try-get-tag this tag)))
     (cond
       ((not item)   (typespec-add-new-tag this tag value))
-      (else         (set-type-tag-value! item value)))))
+      (else         (setf (type-tag-value item) value)))))
 
 ;; Make exception if there are no this tag
 
 (defun typespec-safe-find-tag (this tag)
   (let ((item (typespec-try-get-tag this tag)))
     (cond
-      ((not item)   (error (format nil "Attempted to modify  tag {~a} to typespec." tag)))
+      ((not item)   (error (format nil "Attempted to find non existing tag ~a to typespec." tag)))
       (else         item))))
 
 ;; Check if the tags list empty
