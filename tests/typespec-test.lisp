@@ -1,6 +1,6 @@
-(in-package :type-system.tests)
+(in-package :type-system-test)
 
-(def-suite* typespec-suite)
+(def-suite* typespec-test)
 
 (defmacro check-equal? (a expected)
   `(is (equalp ,a ,expected)
@@ -44,5 +44,6 @@
     ))
 
 (defun typespec-test ()
+  (setf 5am:*on-failure* :debug)
   (setf 5am:*on-error* :debug)
-  (run! 'typespec-suite))
+  (run! 'typespec-test))
