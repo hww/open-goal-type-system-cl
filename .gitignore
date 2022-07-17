@@ -7,4 +7,10 @@
 *.x86f
 *~
 .#*
+\#*\#
+*.fas
+*.DS_Store
+*.~lock*
 /tests/*sly-mrepl for sbcl*
+
+

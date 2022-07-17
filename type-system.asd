@@ -1,3 +1,4 @@
+
 (asdf:defsystem #:type-system
   :description "Open GOAL Type System"
   :version "0.1.0"
@@ -9,4 +10,5 @@
   :components ((:file "package")
 	       (:file "src/main")
 	       (:file "src/goal-lib")
-	       (:file "src/typespec")))
+	       (:file "src/typespec")
+	       (:file "src/type")))

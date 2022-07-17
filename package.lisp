@@ -15,6 +15,8 @@
    :string-append
    :string-append!
    :string-join
+   :list->string
+   :append!
    ;;
    :list-ref
    :array->list
@@ -92,29 +94,86 @@
    :get-in-memory-alignment
    :get-inl-array-stride-align
    :get-inl-array-start-align
-   :get-preferred-reg-class)
+   :get-preferred-reg-class
+   )
   )
 
-(uiop:define-package #:type-system
-  (:use #:cl #:goal-lib)
+(uiop:define-package #:type-system/typespec
+  (:use #:cl #:goal-lib #:type-system/interfaces) 
   (:export
    ;;
    :type-tag
    :type-tag-new 
    ;;
    :typespec
+   :typespec-p
    :typespec-new
+   :typespec-basetype
+   ;;
    :typespec-args-add
    :typespec-args-count
    :typespec-args-ref
-   :typespec-inspect
-   :typespec-basetype
+   :typespec-args-empty?
+   ;;
    :typespec-add-new-tag
    :typespec-try-get-tag
    :typespec-modify-tag
-   :typespec-add-or-modify-tag)
+   :typespec-add-or-modify-tag
+   :typespec-tags-empty?
+   )
+  )
+
+(uiop:define-package #:type-system/type
+  (:use #:cl #:type-system/interfaces #:goal-lib #:type-system/typespec)
+  (:export
+   :GOAL-NEW-METHOD
+   :GOAL-DEL-METHOD
+   :GOAL-PRINT-METHOD
+   :GOAL-INSPECT-METHOD
+   :GOAL-LENGTH-METHOD
+   :GOAL-ASIZE-METHOD
+   :GOAL-COPY-METHOD
+   :GOAL-RELOC-METHOD
+   :GOAL-MEMUSAGE-METHOD
+   :method-info
+   :method-info-new
+   :type-flags
+   :type-flags-new
+   :type-flags-flag
+   :gtype
+   :gtype-new
+   :gtype-disallow-in-runtime
+   :gtype-has-parent?
+   :gtype-get-parent
+   :gtype-get-my-method
+   :gtype-get-my-method-by-id
+   :gtype-get-my-last-method
+   :gtype-get-my-new-method
+   :gtype-add-method
+   :gtype-add-new-method
+   :gtype-set-runtime-type
+   :gtype-add-state
+   :gtype-find-state
+   :incompatible-diff
+   )
+  )
+
+
+
+
+(uiop:define-package #:type-system
+  (:use #:cl
+	#:goal-lib
+	#:type-system/type
+	#:type-system/interfaces
+	#:type-system/typespec
+	) 
+  (:export
+   )
   (:reexport :goal-lib)
   (:reexport :type-system/interfaces)
+  (:reexport :type-system/type)
+  (:reexport :type-system/typespec)
   )
 
 

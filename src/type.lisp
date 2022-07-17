@@ -1,3 +1,6 @@
+(in-package :type-system/type)
+
+
 ;; ----------------------------------------------------------------------------
 ;;
 ;; Valeriya P.
@@ -21,14 +24,19 @@
   (id -1 :type integer)
   (name EMPTY-SYMBOL :type symbol)
   (type nil :type typespec)
-  (defined-in-type nil :type boolean)
+  (defined-in-type nil :type symbol)
   (no-virtual nil :type boolean)
   (override nil :type boolean)
   )
 
 ;; Most useful constructor
-(defun method-info-new (id type defined-in-type &optional (no-virtual nil) (override nil))
-  (make-method-info id name type defined-in-type no-virtual override))
+(defun method-info-new (id name type &optional (defined-in-type nil) (no-virtual nil) (override nil))
+  (make-method-info :id id
+		    :name name
+		    :type type
+		    :defined-in-type defined-in-type
+		    :no-virtual no-virtual
+		    :override override))
 
 ;; One line inspector
 
@@ -36,27 +44,27 @@
   (format nil "Method ~3a: ~20a ~a"
           (method-info-id this)
           (method-info-name this)
-          (inspect (method-info-type this))))
+          (to-str (method-info-typoe this))))
 
 ;; Compare types TODO Not sure it is needed
 
-(defmethod diff ((this method-info) (other gtype))
-  (my/with-slots lhs. (method-info id name type defined-in-type no-virtual override) this
-    (my/with-slots rhs. (method-info id name type defined-in-type no-virtual override) other
-      (define result "")
-      (when (!= lhs.id rhs.id)
-	(string-append! result (format nil "id: ~a vs. ~a~%" lhs.id rhs.id)))
-      (when (!= lhs.name rhs.name)
-	(string-append! result (format nil "name:: ~a vs. ~a~%" lhs.name rhs.name)))
-      (when (!= lhs.type rhs.type)
-	(string-append! result (format nil "type: ~a vs. ~a~%" (inspect lhs.type) (inspect rhs.type))))
-      (when (!= lhs.defined-in-type rhs.defined-in-type)
-	(string-append! result (format nil "defined-in-typ: ~a vs. ~a~%" lhs.defined-in-type rhs.defined-in-type)))
-      (when (!= lhs.no-virtual rhs.no-virtual)
-	(string-append! result (format nil "no-virtual: ~a vs. ~a~%" lhs.no-virtual rhs.no-virtual)))
-      (when (!= lhs.override rhs.override)
-	(string-append! result (format nil "overrides: ~a vs. ~a~%" lhs.override rhs.override)))
-      result)))
+(defmethod diff ((this method-info) (other method-info))
+  (my/with-slots l- (method-info id name type defined-in-type no-virtual override) this
+    (my/with-slots r- (method-info id name type defined-in-type no-virtual override) other
+      (let ((result ""))
+	(when (!= l-id r-id)
+	  (string-append! result (format nil "id: ~a vs. ~a~%" l-id r-id)))
+	(when (!= l-name r-name)
+	  (string-append! result (format nil "name: ~a vs. ~a~%" l-name r-name)))
+	(when (!= l-type r-type)
+	  (string-append! result (format nil "type: ~a vs. ~a~%" (to-str l-type) (to-str r-type))))
+	(when (!= l-defined-in-type r-defined-in-type)
+	  (string-append! result (format nil "defined-in-typ: ~a vs. ~a~%" l-defined-in-type r-defined-in-type)))
+	(when (!= l-no-virtual r-no-virtual)
+	  (string-append! result (format nil "no-virtual: ~a vs. ~a~%" l-no-virtual r-no-virtual)))
+	(when (!= l-override r-override)
+	  (string-append! result (format nil "overrides: ~a vs. ~a~%" l-override r-override)))
+	result))))
    
 ;; ----------------------------------------------------------------------------
 ;; The constants
@@ -89,7 +97,7 @@
 (defun type-flags-new () (make-type-flags))
 
 (defun type-flags-flag (flags)
-  (my/with-slots (type-flags size heap-base methods pad) flags
+  (my/with-slots nil (type-flags size heap-base methods pad) flags
 		 (+ (logand size      #xFFFF)
 		    (ash (logand heap-base #xFFFF) 16)
 		    (ash (logand methods   #xFFFF) 32)
@@ -145,21 +153,21 @@
 
 ;; Typical constructor
 
-(defun type-new (parent name is-boxed heap-base)
+(defun gtype-new (parent name is-boxed heap-base)
   (let ((it (make-gtype)))
-    [set-type-parent! it parent]
-    [set-type-name! it name]
-    [set-type-is-boxed! it is-boxed]
-    [set-type-heap-base! it heap-base]
-    [set-type-runtime-name! it name]
+    (setf (gtype-parent it) parent)
+    (setf (gtype-name it) name)
+    (setf (gtype-is-boxed it) is-boxed)
+    (setf (gtype-heap-base it) heap-base)
+    (setf (gtype-runtime-name it) name)
     it))
 
-(defun type-base-type (this)
+(defun gtype-base-type (this)
   (type-parent this))
 
 ;; Dsable type for runtime
 
-(defun type-disallow-in-runtime (this)
+(defun gtype-disallow-in-runtime (this)
   (setf (gtype-allow-in-runtime this) false))
 
 ;; Print information for all methods defined specifically for a type.
@@ -178,13 +186,13 @@
 ;; Does this type have a parent that makes sense to use? Object and none both
 ;; don't have meaningful parents.
 
-(defun type-has-parent? (this)
+(defun gtype-has-parent? (this)
   (and (!= (type-name this) 'object)
        (!= (type-parent this) EMPTY-SYMBOL)))
 
 ;; Returns the parent of false
 
-(defun type-get-parent (this)
+(defun gtype-get-parent (this)
   (if (!= (type-name this) 'object)
       (type-parent this)
       'none))
@@ -198,14 +206,14 @@
 ;; Get a method that is defined specifically in this type by id. Returns if it
 ;; was found or not.
 
-(defun type-get-my-method-by-id (this id)
+(defun gtype-get-my-method-by-id (this id)
   (assert (> id 0))  ;; 0 is new, should use explicit new method functions instead.
   (find-item id (type-methods this) :key #'method-info-id)) 
 
 ;; Get the last method defined specifically for this type. Returns if there were
 ;; any methods defined specifically for this type or not.
 
-(defun type-get-my-last-method (this)
+(defun gtype-get-my-last-method (this)
   (let ((col (type-methods this)))
     (if (== 0 (arr-count coll))
 	nil
@@ -214,7 +222,7 @@
 ;; Get the new method defined specifically for this type. Returns if there is a
 ;; new method specific to this type or not.
 
-(defun type-get-my-new-method (this)
+(defun gtype-get-my-new-method (this)
   (if (type-new-method-info-defined this)
       (type-new-method-info this)
       nil))
@@ -254,7 +262,7 @@
 
 ;; Add the state to the class
 
-(defun type-add-state (this name type)
+(defun gtype-add-state (this name type)
   (let ((state (hash-ref (type-states this) name nil)))
 	(when state
 	  (error (format nil "State ~a is multiply defined" name)))
@@ -277,7 +285,7 @@
     (my/with-slots r- (type methods states new-method-info new-method-info-defined generate-inspect parent
 			    name allow-in-runtime runtime-name is-boxed heap-base) other
       (let ((result ""))
-	;; Check methods count
+	;;; Check methods count
 	(unless (== l-methods r-methods)
 	  (let* ((l-methods.size (gvector-count l-methods))
 		 (r-methods.size (gvector-count r-methods))
@@ -293,7 +301,7 @@
 		  (string-append! result (format nil "Method def ~a (~a/~a):~%~a~%"
 						 i (method-info-name l) (method-info-name r)
 						 (method-info-diff l r))))))))
-	;; Check states
+	;;; Check states
 	(unless (== l-states r-states)
 	  "States are different:~%"
 	  (hash-map
@@ -305,7 +313,7 @@
 		  (string-append! result (format nil "  ~a is in one, but not the other-~%" name)))
 		 ((notequal? l-state r-state)
 		  (string-append! result (format nil "  ~a is defined differently: ~a vs ~a~%"
-						 name  (to-str l-state) (to-str r-state)))))))))
+						 name  (to-str l-state) (to-str r-state))))))))
 
 	  (hash-map
 	   (type-states other)
@@ -313,23 +321,26 @@
 	     (let ((r-state (type-find-state this name)))
 	       (when (not r-state)
 		 (string-append! result (format nil "  ~a is in one, but not the other-~%" name)))))))
-	  ;; Check other params
-	  (when (!= l-new-method-info r-new-method-info)
-	    (string-append! result (format nil "new-method-info: ~a vs ~a~%" l-new-method-info  r-new-method-info)))
-	  (when (!= l-new-method-info-defined r-new-method-info-defined)
-	    (string-append! result (format nil "new-method-info-defined: ~a vs. ~a~%" l-new-method-info-defined  r-new-method-info-defined)))
-	  (when (!= l-parent r-parent)
-	    (string-append! result (format nil "parent: ~a vs. ~a~%" l-parent r-parent)))
-	  (when (!= l-name r-name)
-	    (string-append! result (format nil "name: ~a vs. ~a~%" l-name r-name)))
-	  (when (!= l-allow-in-runtime r-allow-in-runtime)
-	    (string-append! result (format nil "allow-in-runtime: ~a vs. ~a~%" l-allow-in-runtime r-allow-in-runtime)))
-	  (when (!= l-runtime-name r-runtime-name)
-	    (string-append! result (format nil "runtime-name: ~a vs. ~a~%" l-runtime-name r-runtime-name)))
-	  (when (!= l-is-boxed r-is-boxed)
-	    (string-append! result (format nil "is-boxed: ~a vs. ~a~%" l-is-boxed r-is-boxed)))
-	  (when (!= l-heap-base r-heap-base)
-	    (string-append! result (format nil "heap-base: ~a vs. ~a~%" l-heap-base r-heap-base)))
-	  (when (!= l-generate-inspect r-generate-inspect)
-	    (string-append! result (format "generate-inspect: ~a vs. ~a~%" l-generate-inspect r-generate-inspect)))
-	result)))
+
+	;; Check other params
+	(when (!= l-new-method-info r-new-method-info)
+	  (string-append! result (format nil "new-method-info: ~a vs ~a~%" l-new-method-info  r-new-method-info)))
+	(when (!= l-new-method-info-defined r-new-method-info-defined)
+	  (string-append! result (format nil "new-method-info-defined: ~a vs. ~a~%" l-new-method-info-defined  r-new-method-info-defined)))
+	(when (!= l-parent r-parent)
+	  (string-append! result (format nil "parent: ~a vs. ~a~%" l-parent r-parent)))
+	(when (!= l-name r-name)
+	  (string-append! result (format nil "name: ~a vs. ~a~%" l-name r-name)))
+	(when (!= l-allow-in-runtime r-allow-in-runtime)
+	  (string-append! result (format nil "allow-in-runtime: ~a vs. ~a~%" l-allow-in-runtime r-allow-in-runtime)))
+	(when (!= l-runtime-name r-runtime-name)
+	  (string-append! result (format nil "runtime-name: ~a vs. ~a~%" l-runtime-name r-runtime-name)))
+	(when (!= l-is-boxed r-is-boxed)
+	  (string-append! result (format nil "is-boxed: ~a vs. ~a~%" l-is-boxed r-is-boxed)))
+	(when (!= l-heap-base r-heap-base)
+	  (string-append! result (format nil "heap-base: ~a vs. ~a~%" l-heap-base r-heap-base)))
+	(when (!= l-generate-inspect r-generate-inspect)
+	  (string-append! result (format "generate-inspect: ~a vs. ~a~%" l-generate-inspect r-generate-inspect)))
+	
+	result)
+      )))

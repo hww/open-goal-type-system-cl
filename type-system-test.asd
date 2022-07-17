@@ -1,3 +1,4 @@
+
 (asdf:defsystem #:type-system-test
   :description "Test system for type-system"
   :author "Valeriya Pudova <valery.hww@gmail.com>"
@@ -6,5 +7,8 @@
   :serial t
   :depends-on (#:type-system #:fiveam #:cl-interpol)
   :components ((:file "tests/package")
+	       (:file "tests/test-lib")
 	       (:file "tests/main")
-               (:file "tests/typespec-test")))
+               (:file "tests/typespec-test")
+	       (:file "tests/type-test")
+	       ))

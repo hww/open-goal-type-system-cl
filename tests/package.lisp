@@ -1,5 +1,14 @@
 (uiop:define-package #:type-system-test
-    (:use #:cl #:type-system #:fiveam)
+  (:use #:cl #:type-system #:fiveam)
   (:import-from :type-system)
-  (:export :run-tests-for-ci
-	   :typespec-test))
+  (:export
+   ;;
+   :test!
+   :typespec
+   :type-test
+   ;;
+   :with-gensym
+   :check-equal?
+   :check-not-equal?
+   )
+  )
