@@ -81,4 +81,4 @@ jobs:
 
     - name: load code and run tests
       run: |
-        ros -e '(handler-bind (#+asdf3.2(asdf:bad-SYSTEM-NAME (function MUFFLE-WARNING))) (handler-case (ql:quickload :type-system-tests) (error (a) (format t "caught error ~s~%~a~%" a a) (uiop:quit 123))))' -e '(type-system-tests:test!)'
+        ros -e '(handler-bind (#+asdf3.2(asdf:bad-SYSTEM-NAME (function MUFFLE-WARNING))) (handler-case (ql:quickload :type-system-test) (error (a) (format t "caught error ~s~%~a~%" a a) (uiop:quit 123))))' -e '(type-system-test:test!)'
