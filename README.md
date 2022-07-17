@@ -5,7 +5,7 @@
 
 # The open GOAL type system for Racket
 
-![CI](https://github.com/hww/open-goal-type-system-cl/workflows/CI/badge.svg?branch=master)
+![CI](https://github.com/hww/open-goal-type-system-cl/workflows/CI/badge.svg?branch=main)
 
 The implementation of the GOAL type system with Racket language. This explanation of the GOAL type system available [here](https://open-goal.github.io/docs/reference/type_system) Or you can see the source code of whole [Jack Project](https://github.com/open-goal/jak-project)
 
