@@ -253,10 +253,10 @@
 (defmacro list-ref (list n)
   `(nth ,n ,list))
 
-(defun list->array (list)
+(defun list->vector (list)
   (coerce list 'vector))
 
-(defun array->list (array)
+(defun vector->list (array)
   (coerce array 'list))
 
 (defmacro append! (list v)
@@ -292,14 +292,17 @@
         (return-from find-element i)))
     ,def))
 
-(defmacro arr-ref (col idx &optional (default nil))
-  `(aref ,col ,idx))
+(defmacro arr-ref (col idx &optional (default nil)) 
+  `(cond
+     ((< ,idx 0) ,default)
+     ((>= ,idx (length ,col)) ,default)
+     (t (aref ,col ,idx))))
 
 (defmacro arr-set! (col idx val)
   `(setf (aref ,col ,idx) ,val))
 
 (defmacro arr-push (col val)
-  `(vector-push ,col ,val))
+  `(vector-push ,val ,col))
 
 (defmacro arr-count (col)
   `(length ,col))
@@ -315,7 +318,7 @@
 (defmacro hash-count (hash)
   `(hash-table-size ,hash))
 (defmacro hash-map (hash func)
-  `(maphash ,func ,hash))
+  `(maphash #',func ,hash))
 
 ;; ==============================================================================
 ;; The structure helpers
@@ -338,16 +341,22 @@
 ;; (foo)
 
 (defmacro my/with-slots (prefix (struct &rest fields) obj &body body)
-  (let*      
-      ((symbol-list
-	 (loop for f in fields
+  (let*
+      ;; make empty prefix for nil
+      ((pfx (if (null prefix) "" prefix))
+       ;; make a list of fields and accessors
+       (symbol-list
+	 (loop for field-name in fields
 	       collect (cons
-			(intern (format nil "~a~a" prefix f))
-			(find-symbol (string-upcase (format nil "~a-~a" struct f))))))
+			;; local variable name
+			(intern (format nil "~a~a" pfx field-name))
+			;; slot name
+			field-name)))
        (expr-list
 	 (loop for f in symbol-list
-	       collect `(,(car f) (,(cdr f) ,obj)))))
+	       collect `(,(car f) (slot-value ,obj ',(cdr f))))))
     `(let (,@expr-list) ,@body)))
+
 
 ;; Copy the structure and override some of values
 ;;
@@ -365,8 +374,29 @@
   (loop
     with copy = (copy-structure struct)
     for (slot value) on bindings by #'cddr
-    do (setf (slot-value copy slot) value)
+    do
+       (let ((slot-name (find-symbol (symbol-name slot))))
+	 (setf (slot-value copy slot-name) value))
     finally (return copy)))
+
+
+(defun copy-parent-struct (dst src &rest bindings)
+  "Copy src structur to dst stracture and use additional bindings"
+  (loop
+    with copy = src    
+    for slot-info in (sb-mop:class-direct-slots (class-of src))
+    do
+       (let ((slot (slot-value slot-info 'sb-pcl::name)))
+	 (setf (slot-value dst slot)
+	       (slot-value src slot))))
+  (loop
+    with copy = src    
+    for (slot value) on bindings by #'cddr
+    do
+       (let ((slot-name (find-symbol (symbol-name slot))))
+	 (when (null slot-name) (error (format nil "can't find slot ~a" slot)))
+	 (setf (slot-value dst slot-name) value))
+    finally (return dst)))
 
 ;; ==============================================================================
 ;;

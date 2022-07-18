@@ -11,11 +11,11 @@
 
 (in-package :type-system/interfaces)
 
-(defconstant RegClass-GPR-64 0)
-(defconstant RegClass-FLOAT 1)
-(defconstant RegClass-INT-128 2)
-(defconstant RegClass-VECTOR_FLOAT 3)
-(defconstant RegClass-INVALID 4)
+(defconstant REG-CLASS-GPR-64 0)
+(defconstant REG-CLASS-FLOAT 1)
+(defconstant REG-CLASS-INT-128 2)
+(defconstant REG-CLASS-VECTOR_FLOAT 3)
+(defconstant REG-CLASS-INVALID 4)
 
 ;; ==============================================================================
 ;; Inspect the object
@@ -41,10 +41,6 @@
 (defgeneric is-reference? (this)
   (:method (this) (error "Anstract")))
 
-;; when loading data of typable type into a register,
-;; how many bytes do we need?`
-(defgeneric get-load-size (this)
-  (:method (this) (error "Anstract")))
 ;; do we need to sign extend when loading?
 (defgeneric get-load-signed (this)
   (:method (this) (error "Anstract")))

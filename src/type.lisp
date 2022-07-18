@@ -23,43 +23,44 @@
 (defstruct method-info
   (id -1 :type integer)
   (name EMPTY-SYMBOL :type symbol)
-  (type nil :type typespec)
+  (type nil :type (or null typespec))
   (defined-in-type nil :type symbol)
   (no-virtual nil :type boolean)
   (override nil :type boolean)
   )
 
-;; Most useful constructor
-(defun method-info-new (id name type &optional (defined-in-type nil) (no-virtual nil) (override nil))
-  (make-method-info :id id
-		    :name name
-		    :type type
-		    :defined-in-type defined-in-type
-		    :no-virtual no-virtual
-		    :override override))
-
+(defun method-info-new (id name type defined-in-type &optional (no-virtual nil) (override nil))
+  (make-method-info :id id :name name :type type :defined-in-type defined-in-type
+		    :no-virtual no-virtual :override override))
+  		
 ;; One line inspector
 
 (defmethod to-str ((this method-info))
+  (method-info-to-str this))
+(defun method-info-to-str (this)
   (format nil "Method ~3a: ~20a ~a"
           (method-info-id this)
           (method-info-name this)
-          (to-str (method-info-typoe this))))
+          (to-str (method-info-type this))))
 
 ;; Compare types TODO Not sure it is needed
 
 (defmethod diff ((this method-info) (other method-info))
+  (method-info-diff this other))
+(declaim (ftype (function (method-info method-info) string) method-info-diff))
+(defun method-info-diff (this other)  
   (my/with-slots l- (method-info id name type defined-in-type no-virtual override) this
     (my/with-slots r- (method-info id name type defined-in-type no-virtual override) other
       (let ((result ""))
-	(when (!= l-id r-id)
-	  (string-append! result (format nil "id: ~a vs. ~a~%" l-id r-id)))
+	(when (!= l-id r-id) (string-append! result (format nil "id: ~a vs. ~a~%" l-id r-id)))
 	(when (!= l-name r-name)
 	  (string-append! result (format nil "name: ~a vs. ~a~%" l-name r-name)))
 	(when (!= l-type r-type)
 	  (string-append! result (format nil "type: ~a vs. ~a~%" (to-str l-type) (to-str r-type))))
 	(when (!= l-defined-in-type r-defined-in-type)
-	  (string-append! result (format nil "defined-in-typ: ~a vs. ~a~%" l-defined-in-type r-defined-in-type)))
+	  (string-append! result
+			  (format nil "defined-in-typ: ~a vs. ~a~%" l-defined-in-type
+				  r-defined-in-type)))
 	(when (!= l-no-virtual r-no-virtual)
 	  (string-append! result (format nil "no-virtual: ~a vs. ~a~%" l-no-virtual r-no-virtual)))
 	(when (!= l-override r-override)
@@ -98,10 +99,10 @@
 
 (defun type-flags-flag (flags)
   (my/with-slots nil (type-flags size heap-base methods pad) flags
-		 (+ (logand size      #xFFFF)
-		    (ash (logand heap-base #xFFFF) 16)
-		    (ash (logand methods   #xFFFF) 32)
-		    (ash (logand pad       #xFFFF) 48))))
+    (+ (logand size      #xFFFF)
+       (ash (logand heap-base #xFFFF) 16)
+       (ash (logand methods   #xFFFF) 32)
+       (ash (logand pad       #xFFFF) 48))))
 
 ;; ----------------------------------------------------------------------------
 ;; The type
@@ -110,21 +111,22 @@
 ;; Default constructor
 
 (defstruct gtype
-   (methods (arr-new))                         ; vector<method-info>
-   (states (make-hash-table))                  ; hash<string,type-spec>
-   (new-method-info nil :type method-info)     ; MethodInfo
-   (new-method-info-defined nil :type boolean) ; false
-   (generate-inspect t :type boolean)          ; true
-   (parent 'none :type symbol)                 ; string?  the parent type (is empty for none and object)
-   (name 'none :type symbol)                   ; string?
-   (allow-in-runtime t :type boolean)          ; bool? true;
-   (runtime-name EMPTY-SYMBOL :type symbol)    ; string?
-   (is-boxed nil :type boolean)                ; bool? false  // does this have runtime type information?
-   (heap-base 0 :type integer)                 ; int? 0
-   )
+  (methods (arr-new :element-type :method-info)
+	    :type array)                      ; vector<method-info>
+  (states (make-hash-table) :type hash-table) ; hash<string,type-spec>
+  (new-method-info nil :type (or null method-info)) ; MethodInfo
+  (new-method-info-defined nil :type boolean) ; false
+  (generate-inspect t :type boolean)          ; true
+  (parent 'none :type symbol)                 ; string?  the parent type (is empty for none and object)
+  (name 'none :type symbol)                   ; string?
+  (allow-in-runtime t :type boolean)          ; bool? true;
+  (runtime-name EMPTY-SYMBOL :type symbol)    ; string?
+  (is-boxed nil :type boolean)                ; bool? false  // does this have runtime type information?
+  (heap-base 0 :type integer)                 ; int? 0
+  )
 
 (defmethod to-str ((this gtype))
-  (format nil "[Type] {~a}" (type-name this)))
+  (format nil "[Type] {~a}" (gtype-name this)))
 
 (defmethod is-reference? ((this gtype))
   (error "Abstract!"))
@@ -153,6 +155,7 @@
 
 ;; Typical constructor
 
+(declaim (ftype (function (symbol symbol boolean integer) gtype) gtype-new))
 (defun gtype-new (parent name is-boxed heap-base)
   (let ((it (make-gtype)))
     (setf (gtype-parent it) parent)
@@ -163,7 +166,7 @@
     it))
 
 (defun gtype-base-type (this)
-  (type-parent this))
+  (gtype-parent this))
 
 ;; Dsable type for runtime
 
@@ -174,12 +177,15 @@
 ;; Does not print inherited methods.
 
 (defmethod to-str ((this gtype))
+  (gtype-to-str this))
+
+(defun gtype-to-str (this)
   (string-join
    (cons (if (gtype-new-method-info-defined this)
              (to-str (gtype-new-method-info this))
              "")
-         (map (lambda (m) (to-str m))
-              (vector->list (type-methods this))))
+         (map 'vector (lambda (m) (to-str m))
+              (gtype-methods this)))
    "~%"))
 
 
@@ -187,35 +193,35 @@
 ;; don't have meaningful parents.
 
 (defun gtype-has-parent? (this)
-  (and (!= (type-name this) 'object)
-       (!= (type-parent this) EMPTY-SYMBOL)))
+  (and (!= (gtype-name this) 'object)
+       (!= (gtype-parent this) EMPTY-SYMBOL)))
 
 ;; Returns the parent of false
 
 (defun gtype-get-parent (this)
-  (if (!= (type-name this) 'object)
-      (type-parent this)
+  (if (!= (gtype-name this) 'object)
+      (gtype-parent this)
       'none))
 
 ;; Get a method that is defined specifically for this type. Returns if it was
 ;; found or not.
 
 (defun type-get-my-method (this name)
-  (find name (type-methods this) :key #'method-info-name))
+  (find name (gtype-methods this) :key #'method-info-name))
 
 ;; Get a method that is defined specifically in this type by id. Returns if it
 ;; was found or not.
 
 (defun gtype-get-my-method-by-id (this id)
   (assert (> id 0))  ;; 0 is new, should use explicit new method functions instead.
-  (find-item id (type-methods this) :key #'method-info-id)) 
+  (find id (gtype-methods this) :key #'method-info-id)) 
 
 ;; Get the last method defined specifically for this type. Returns if there were
 ;; any methods defined specifically for this type or not.
 
 (defun gtype-get-my-last-method (this)
-  (let ((col (type-methods this)))
-    (if (== 0 (arr-count coll))
+  (let ((col (gtype-methods this)))
+    (if (== 0 (arr-count col))
 	nil
 	(arr-last col))))
 
@@ -223,24 +229,24 @@
 ;; new method specific to this type or not.
 
 (defun gtype-get-my-new-method (this)
-  (if (type-new-method-info-defined this)
-      (type-new-method-info this)
+  (if (gtype-new-method-info-defined this)
+      (gtype-new-method-info this)
       nil))
 
 ;; Add a method defined specifically for this type.
-
+(declaim (ftype (function (gtype method-info) method-info) type-add-method))
 (defun type-add-method (this info)
   (let* ((id  (method-info-id info))
-	 (col (type-methods this))
-	 (len (arr-count coll)))
+	 (col (gtype-methods this))
+	 (len (arr-count col)))
     (dotimes (i len)
       ;; iterate backward
       (let ((it (arr-ref col (- len i))))
         (when (not (method-info-override it))
           (assert (== id (1+ (method-info-id it))))
-          (return t) ;; stop iterating
-          )))
-    (arr-push (type-methods this) info)
+	  ;; stop iterating
+          (return t))))
+    (arr-push (gtype-methods this) info)
     info))
 
 ;; Add a NEW method defined specifically for this type. The name of this
@@ -248,12 +254,12 @@
 
 (defun type-add-new-method (this info)
   (assert (== (method-info-name info) 'new))
-  (setf (type-new-method-info-defined this) t)
-  (setf (type-new-method-info this) info)
+  (setf (gtype-new-method-info-defined this) t)
+  (setf (gtype-new-method-info this) info)
   info)
 
 (defun type-set-runtime-type (this name)
-  (setf (type-runtime-name this) name))
+  (setf (gtype-runtime-name this) name))
 
 
 ;; ----------------------------------------------------------------------------
@@ -263,13 +269,13 @@
 ;; Add the state to the class
 
 (defun gtype-add-state (this name type)
-  (let ((state (hash-ref (type-states this) name nil)))
+  (let ((state (hash-ref (gtype-states this) name nil)))
 	(when state
 	  (error (format nil "State ~a is multiply defined" name)))
-	(hash-set! (type-states this) name type)))
+	(hash-set! (gtype-states this) name type)))
 
-(defun type-find-state (this name)
-  (hash-ref (type-states this) name nil))
+(defun gtype-find-state (this name)
+  (hash-ref (gtype-states this) name nil))
 
 ;; ----------------------------------------------------------------------------
 ;; The type
@@ -280,23 +286,31 @@
           expected-type-name other))
 
 (defmethod diff ((this gtype) (other gtype))
-  (my/with-slots l- (type methods states new-method-info new-method-info-defined generate-inspect parent
-			  name allow-in-runtime runtime-name is-boxed heap-base) this
-    (my/with-slots r- (type methods states new-method-info new-method-info-defined generate-inspect parent
-			    name allow-in-runtime runtime-name is-boxed heap-base) other
+  (gtype-diff this other))
+
+(declaim (ftype (function (gtype gtype) string) gtype-diff))
+(defun gtype-diff (this other)
+  (my/with-slots l- (gtype methods states new-method-info
+			  new-method-info-defined generate-inspect
+			  parent name allow-in-runtime runtime-name
+			  is-boxed heap-base) this
+    (my/with-slots r- (gtype methods states new-method-info
+			    new-method-info-defined generate-inspect
+			    parent name allow-in-runtime runtime-name
+			    is-boxed heap-base) other
       (let ((result ""))
 	;;; Check methods count
 	(unless (== l-methods r-methods)
-	  (let* ((l-methods.size (gvector-count l-methods))
-		 (r-methods.size (gvector-count r-methods))
+	  (let* ((l-methods.size (arr-count l-methods))
+		 (r-methods.size (arr-count r-methods))
 		 (min-methods-size (min l-methods.size r-methods.size)))
 	    (when (!= l-methods.size r-methods.size)
 	      (string-append! result (format nil "Number of additional methods ~a vs. ~a~%"
 					     l-methods.size r-methods.size)))
 	    ;; Check methods one to one
-	    (dotimes (i (in-range min-methods-size))
-	      (let ((l (gvector-ref l-methods i))
-		    (r (gvector-ref r-methods i)))
+	    (dotimes (i min-methods-size)
+	      (let ((l (arr-ref l-methods i))
+		    (r (arr-ref r-methods i)))
 		(when (!= l r)
 		  (string-append! result (format nil "Method def ~a (~a/~a):~%~a~%"
 						 i (method-info-name l) (method-info-name r)
@@ -305,9 +319,10 @@
 	(unless (== l-states r-states)
 	  "States are different:~%"
 	  (hash-map
-	   (type-states this)
+	   (gtype-states this)
 	   (lambda (name l-state)
-	     (let ((r-state (type-find-state other name)))
+	     (assert l-state)
+	     (let ((r-state (gtype-find-state other name)))
 	       (cond
 		 ((not r-state)
 		  (string-append! result (format nil "  ~a is in one, but not the other-~%" name)))
@@ -316,9 +331,10 @@
 						 name  (to-str l-state) (to-str r-state))))))))
 
 	  (hash-map
-	   (type-states other)
+	   (gtype-states other)
 	   (lambda (name l-state)
 	     (let ((r-state (type-find-state this name)))
+	       (assert l-state)
 	       (when (not r-state)
 		 (string-append! result (format nil "  ~a is in one, but not the other-~%" name)))))))
 
@@ -340,7 +356,7 @@
 	(when (!= l-heap-base r-heap-base)
 	  (string-append! result (format nil "heap-base: ~a vs. ~a~%" l-heap-base r-heap-base)))
 	(when (!= l-generate-inspect r-generate-inspect)
-	  (string-append! result (format "generate-inspect: ~a vs. ~a~%" l-generate-inspect r-generate-inspect)))
+	  (string-append! result (format nil "generate-inspect: ~a vs. ~a~%" l-generate-inspect r-generate-inspect)))
 	
 	result)
       )))

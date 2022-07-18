@@ -8,5 +8,6 @@
   (main-test)
   (typespec-test)
   (type-test)
+  (basic-types-test)
   )
 

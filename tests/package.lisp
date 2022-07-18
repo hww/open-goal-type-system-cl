@@ -6,6 +6,7 @@
    :with-gensym
    :check-equal?
    :check-not-equal?
+   :check-equal-downcase?
    ))
 
 (uiop:define-package #:type-system-test
@@ -15,5 +16,6 @@
    :test!
    :typespec
    :type-test
+   :basic-types-test
    )
   )

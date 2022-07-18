@@ -19,12 +19,12 @@
    :append!
    ;;
    :list-ref
-   :array->list
-   :list->array
+   :vector->list
+   :list->vector
    ;;
-   :first-arr
-   :last-arr
-   :last-idx-arr
+   :arr-first
+   :arr-last
+   :arr-last-idx
    :arr-idx-of
    :arr-new
    :arr-ref
@@ -72,17 +72,19 @@
    :bit-field
    ;;
    :my/with-slots
+   :update-struct
+   :copy-parent-struct
    )
   )
 
 (uiop:define-package #:type-system/interfaces
   (:use #:cl)
   (:export
-   :RegClass-GPR-64
-   :RegClass-FLOAT
-   :RegClass-INT-128
-   :RegClass-VECTOR_FLOAT
-   :RegClass-INVALID
+   :REG-CLASS-GPR-64
+   :REG-CLASS-FLOAT
+   :REG-CLASS-INT-128
+   :REG-CLASS-VECTOR_FLOAT
+   :REG-CLASS-INVALID
    :to-str
    :diff
    :compare
@@ -137,6 +139,7 @@
    :GOAL-MEMUSAGE-METHOD
    :method-info
    :method-info-new
+   :method-info-to-str
    :type-flags
    :type-flags-new
    :type-flags-flag
@@ -155,6 +158,74 @@
    :gtype-add-state
    :gtype-find-state
    :incompatible-diff
+
+   ;; Basic Types
+   :basic-type-diff
+   :basic-type-new
+   :basic-type-set-final
+   :bitfield-type-new
+   :compare
+   :diff
+   :enum-type-diff
+   :enum-type-find
+   :enum-type-new
+   :field-diff
+   :field-is-array?
+   :field-mark-as-user-placed
+   :field-new
+   :field-set-alignment
+   :field-set-array
+   :field-set-dynamic
+   :field-set-field-score
+   :field-set-inline
+   :field-set-offset
+   :field-set-skip-in-static-decomp
+   :get-in-memory-alignment
+   :get-in-memory-alignment
+   :get-in-memory-alignment
+   :get-in-memory-alignment
+   :get-inl-array-start-align
+   :get-inl-array-start-align-impl
+   :get-inl-array-stride-align
+   :get-inl-array-stride-align-impl
+   :get-load-signed
+   :get-load-size
+   :get-offset
+   :get-preferred-reg-class
+   :get-size-in-memory
+   :is-reference?
+   :lookup-bitfield
+   :null-type-new
+   :reference-type-new
+   :sbitfield-diff
+   :sbitfield-new
+   :struct-lookup-field
+   :struct-type-add-field
+   :struct-type-diff
+   :struct-type-fields-count
+   :struct-type-fields-ref
+   :struct-type-get-size-in-memory
+   :struct-type-inherit
+   :struct-type-inspect-fields
+   :struct-type-lookup-field
+   :struct-type-new
+   :struct-type-override-offset
+   :struct-type-override-size-in-memory
+   :struct-type-to-str
+   :to-str
+   :value-type-diff
+   :value-type-inherit
+   :value-type-new
+   ;; Structures
+   :field
+   :null-type
+   :value-type
+   :reference-type
+   :struct-type
+   :basic-type
+   :sbitfield
+   :bitfield-type
+   :enum-type
    )
   )
 

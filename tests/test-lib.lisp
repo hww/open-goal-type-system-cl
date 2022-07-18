@@ -24,3 +24,14 @@
 		    (wrapstring ,a)
 		    (wrapstring ,expected)))))
 
+(defmacro check-equal-downcase? (a expected)
+  ;; `(is (equalp ,a ,expected)
+  ;;      (format nil "~%  Expected equal~%   given: ~a~%  expect: ~a~%" ,a ,expected))) 
+  `(let ((s1 (string-downcase ,a))
+	 (s2 (string-downcase ,expected)))
+     (unless (equalp s1 s2)
+       (error (format nil "~%  Expected equal~%   given: ~a~%  expect: ~a~%"
+		      (wrapstring s1)
+		      (wrapstring s2))))))
+
+    

@@ -1,5 +1,5 @@
 (in-package :type-system-test)
-(use-package :type-system)
+(use-package :type-system/type)
 
 (defun type-test ()
   (let ((mi1 (method-info-new 1 'name1 (typespec-new 'foo1 nil nil) 'foo1 nil t))
