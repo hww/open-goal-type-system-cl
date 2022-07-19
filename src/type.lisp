@@ -1,5 +1,5 @@
 (in-package :type-system/type)
-
+(named-readtables:in-readtable :interpol-syntax)
 ;; ----------------------------------------------------------------------------
 ;;
 ;; Valeriya P.

@@ -5,7 +5,7 @@
   :license "LLGPL"
   :encoding :utf-8
   :serial t
-  :depends-on (#:type-system #:alexandria)
+  :depends-on (#:type-system #:alexandria #:interpol)
   :components ((:file "tests/package")
 	       (:file "tests/test-lib")
 	       (:file "tests/main")

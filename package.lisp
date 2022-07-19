@@ -1,5 +1,5 @@
 (uiop:define-package #:goal-lib
-  (:use #:cl #:cl-ppcre) 
+  (:use #:cl #:cl-ppcre #:interpol) 
   (:import-from )
   (:export
    :ex/defconstant
@@ -41,6 +41,8 @@
    :hash-count
    :hash-ref
    :hash-set!
+   :hash-clear!
+   :make-hash
    ;;
    :set!
    :inc
@@ -202,6 +204,7 @@
    :gtype-set-runtime-type
    :gtype-add-state
    :gtype-find-state
+   :gtype-base-type
    :incompatible-diff
 
    ;; Basic Types
@@ -324,4 +327,4 @@
   (:reexport :type-system/typespec)
   )
 
-
+(named-readtables:in-readtable :interpol-syntax)

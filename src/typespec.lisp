@@ -1,5 +1,6 @@
 (in-package :type-system/typespec)
-(use-package :goal-lib)
+(named-readtables:in-readtable :interpol-syntax)
+
 
 ;; ----------------------------------------------------------------------------
 ;;

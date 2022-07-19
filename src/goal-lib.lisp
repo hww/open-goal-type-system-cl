@@ -353,6 +353,10 @@ defaults to CHAR= (for case-sensitive comparison)."
   `(hash-table-count ,hash))
 (defmacro hash-map (hash func)
   `(maphash #',func ,hash))
+(defmacro hash-clear! (hash)
+  `(clrhash ,hash))
+(defun make-hash (&key (capacity 8))
+  (make-hash-table :size capacity))
 
 ;; ==============================================================================
 ;; The structure helpers
