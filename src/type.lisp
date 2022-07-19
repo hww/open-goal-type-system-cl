@@ -1,6 +1,5 @@
 (in-package :type-system/type)
 
-
 ;; ----------------------------------------------------------------------------
 ;;
 ;; Valeriya P.
@@ -11,8 +10,6 @@
 ;; |___|___|________|________|
 ;;
 ;; ----------------------------------------------------------------------------
-
-(defconstant EMPTY-SYMBOL :||)
 
 ;; ----------------------------------------------------------------------------
 ;; The method info
@@ -71,17 +68,6 @@
 ;; The constants
 ;; ----------------------------------------------------------------------------
 
-;; The offset if the method from begin of methods table
-
-(defconstant GOAL-NEW-METHOD 0)       ;; method ID of GOAL new
-(defconstant GOAL-DEL-METHOD 1)       ;; method ID of GOAL delete
-(defconstant GOAL-PRINT-METHOD 2)     ;; method ID of GOAL print
-(defconstant GOAL-INSPECT-METHOD 3)   ;; method ID of GOAL inspect
-(defconstant GOAL-LENGTH-METHOD 4)    ;; method ID of GOAL length
-(defconstant GOAL-ASIZE-METHOD 5)     ;; method ID of GOAL size
-(defconstant GOAL-COPY-METHOD 6)      ;; method ID of GOAL copy
-(defconstant GOAL-RELOC-METHOD 7)     ;; method ID of GOAL relocate
-(defconstant GOAL-MEMUSAGE-METHOD 8)  ;; method ID of GOAL mem-usage
 
 ;; ----------------------------------------------------------------------------
 ;; Utility struct used by the parser
@@ -124,9 +110,6 @@
   (is-boxed nil :type boolean)                ; bool? false  // does this have runtime type information?
   (heap-base 0 :type integer)                 ; int? 0
   )
-
-(defmethod to-str ((this gtype))
-  (format nil "[Type] {~a}" (gtype-name this)))
 
 (defmethod is-reference? ((this gtype))
   (error "Abstract!"))
@@ -176,17 +159,18 @@
 ;; Print information for all methods defined specifically for a type.
 ;; Does not print inherited methods.
 
-(defmethod to-str ((this gtype))
-  (gtype-to-str this))
 
-(defun gtype-to-str (this)
+(defmethod to-str ((this gtype))
+  (format nil "[Type] {~a}" (gtype-name this)))
+
+(defun methods-to-str (this)
   (string-join
    (cons (if (gtype-new-method-info-defined this)
              (to-str (gtype-new-method-info this))
              "")
-         (map 'vector (lambda (m) (to-str m))
+         (map 'list (lambda (m) (to-str m))
               (gtype-methods this)))
-   "~%"))
+   #\newline))
 
 
 ;; Does this type have a parent that makes sense to use? Object and none both
@@ -333,7 +317,7 @@
 	  (hash-map
 	   (gtype-states other)
 	   (lambda (name l-state)
-	     (let ((r-state (type-find-state this name)))
+	     (let ((r-state (gtype-find-state this name)))
 	       (assert l-state)
 	       (when (not r-state)
 		 (string-append! result (format nil "  ~a is in one, but not the other-~%" name)))))))

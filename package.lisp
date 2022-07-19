@@ -1,6 +1,10 @@
 (uiop:define-package #:goal-lib
-  (:use #:cl)
+  (:use #:cl #:cl-ppcre) 
+  (:import-from )
   (:export
+   :ex/defconstant
+   :ex/defun
+   :ex/defmacro
    :else
    :null?
    :integer?
@@ -16,6 +20,7 @@
    :string-append!
    :string-join
    :list->string
+   :string-to-one-line
    :append!
    ;;
    :list-ref
@@ -73,18 +78,46 @@
    ;;
    :my/with-slots
    :update-struct
+   :copy-parent-struct-func
    :copy-parent-struct
+   :struct-names
+   :struct-values
+   :structp
+   :struct-to-list
+   :list-to-struct
+   :list-to-struct!
    )
   )
 
 (uiop:define-package #:type-system/interfaces
-  (:use #:cl)
+  (:use #:cl #:goal-lib)
+  (:import-from
+   :goal-lib  
+   :alexandria
+   )
   (:export
+   ;;
+   :POINTER-SIZE
+   :STRUCTURE-ALIGNMENT
+   ;;
+   :EMPTY-SYMBOL
+   ;;
+   :GOAL-NEW-METHOD
+   :GOAL-DEL-METHOD
+   :GOAL-PRINT-METHOD
+   :GOAL-INSPECT-METHOD
+   :GOAL-LENGTH-METHOD
+   :GOAL-ASIZE-METHOD
+   :GOAL-COPY-METHOD
+   :GOAL-RELOC-METHOD
+   :GOAL-MEMUSAGE-METHOD  
+   ;;
    :REG-CLASS-GPR-64
    :REG-CLASS-FLOAT
    :REG-CLASS-INT-128
    :REG-CLASS-VECTOR_FLOAT
    :REG-CLASS-INVALID
+   ;;
    :to-str
    :diff
    :compare
@@ -101,7 +134,12 @@
   )
 
 (uiop:define-package #:type-system/typespec
-  (:use #:cl #:goal-lib #:type-system/interfaces) 
+  (:use #:cl #:goal-lib #:type-system/interfaces)
+  (:import-from
+   :goal-lib  
+   :alexandria
+   :type-system/interfaces
+   )
   (:export
    ;;
    :type-tag
@@ -109,6 +147,7 @@
    ;;
    :typespec
    :typespec-p
+   :make-typespec
    :typespec-new
    :typespec-basetype
    ;;
@@ -126,24 +165,30 @@
   )
 
 (uiop:define-package #:type-system/type
-  (:use #:cl #:type-system/interfaces #:goal-lib #:type-system/typespec)
+  (:use #:cl #:type-system/interfaces #:goal-lib #:type-system/typespec #:alexandria)
+  (:import-from
+   :goal-lib
+   :type-system/interfaces
+   :type-system/typespec
+   :alexandria
+   )
   (:export
-   :GOAL-NEW-METHOD
-   :GOAL-DEL-METHOD
-   :GOAL-PRINT-METHOD
-   :GOAL-INSPECT-METHOD
-   :GOAL-LENGTH-METHOD
-   :GOAL-ASIZE-METHOD
-   :GOAL-COPY-METHOD
-   :GOAL-RELOC-METHOD
-   :GOAL-MEMUSAGE-METHOD
+   ;;
    :method-info
-   :method-info-new
    :method-info-to-str
+   :method-info-p
+   :method-info-new
+   :make-method-info
+   ;;
    :type-flags
+   :type-flags-p
    :type-flags-new
    :type-flags-flag
+   :make-type-flags
+   ;;
    :gtype
+   :gtype-p
+   :make-gtype
    :gtype-new
    :gtype-disallow-in-runtime
    :gtype-has-parent?
@@ -160,15 +205,31 @@
    :incompatible-diff
 
    ;; Basic Types
+   :basic-type
+   :basic-type-p
+   :make-basic-type
    :basic-type-diff
    :basic-type-new
    :basic-type-set-final
+   ;;
+   :bitfield-type
+   :bitfield-type-p
    :bitfield-type-new
+   :make-bitfield-type
+   ;;
+   :to-str
    :compare
    :diff
+   ;;
+   :enum-type
+   :enum-type-p
    :enum-type-diff
    :enum-type-find
    :enum-type-new
+   :make-enum-type
+   ;;
+   :field
+   :field-p
    :field-diff
    :field-is-array?
    :field-mark-as-user-placed
@@ -180,6 +241,8 @@
    :field-set-inline
    :field-set-offset
    :field-set-skip-in-static-decomp
+   :make-field
+   ;;
    :get-in-memory-alignment
    :get-in-memory-alignment
    :get-in-memory-alignment
@@ -195,10 +258,25 @@
    :get-size-in-memory
    :is-reference?
    :lookup-bitfield
+   ;;
+   :null-type
+   :null-type-p
    :null-type-new
+   :make-null-type
+   ;;
+   :reference-type
+   :reference-type-p
    :reference-type-new
+   :make-reference-type
+   ;;
+   :sbitfield
+   :sbitfield-p
    :sbitfield-diff
    :sbitfield-new
+   :make-sbitfield
+   ;;
+   :struct-type
+   :struct-type-p
    :struct-lookup-field
    :struct-type-add-field
    :struct-type-diff
@@ -212,33 +290,32 @@
    :struct-type-override-offset
    :struct-type-override-size-in-memory
    :struct-type-to-str
-   :to-str
+   :make-struct-type
+   ;;
+   :value-type
+   :value-type-p
    :value-type-diff
    :value-type-inherit
    :value-type-new
-   ;; Structures
-   :field
-   :null-type
-   :value-type
-   :reference-type
-   :struct-type
-   :basic-type
-   :sbitfield
-   :bitfield-type
-   :enum-type
+   :value-type-size
+   :make-value-type
    )
   )
 
-
-
-
 (uiop:define-package #:type-system
   (:use #:cl
+	#:alexandria
 	#:goal-lib
-	#:type-system/type
 	#:type-system/interfaces
 	#:type-system/typespec
-	) 
+	#:type-system/type
+	)
+  (:import-from
+   :goal-lib   
+   :type-system/interfaces
+   :type-system/type
+   :type-system/typespec
+   )
   (:export
    )
   (:reexport :goal-lib)

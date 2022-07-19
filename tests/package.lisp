@@ -10,7 +10,7 @@
    ))
 
 (uiop:define-package #:type-system-test
-  (:use #:cl #:type-system #:test-lib)
+  (:use #:cl #:type-system #:test-lib #:alexandria)
   (:import-from :type-system)
   (:export
    :test!
@@ -18,4 +18,7 @@
    :type-test
    :basic-types-test
    )
-  )
+  (:reexport
+   :type-system
+   :alexandria
+  ))
