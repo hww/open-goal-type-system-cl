@@ -38,6 +38,9 @@
 (defun field-is-array? (this)
   (field-is-array this))
 
+(defun field-is-inline? (this)
+  (field-is-inline this))
+
 (defun field-set-inline (this)
   "Mark a field as inline. This has a different meaning depending on if the field is also an array"
   (setf (field-is-inline this) T))

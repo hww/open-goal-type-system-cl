@@ -1,4 +1,5 @@
 (in-package :type-system/type)
+(use-package :type-system/interfaces)
 (named-readtables:in-readtable :interpol-syntax)
 ;; ----------------------------------------------------------------------------
 ;;
@@ -190,7 +191,7 @@
 ;; Get a method that is defined specifically for this type. Returns if it was
 ;; found or not.
 
-(defun type-get-my-method (this name)
+(defun gtype-get-my-method (this name)
   (find name (gtype-methods this) :key #'method-info-name))
 
 ;; Get a method that is defined specifically in this type by id. Returns if it
@@ -219,7 +220,7 @@
 
 ;; Add a method defined specifically for this type.
 (declaim (ftype (function (gtype method-info) method-info) type-add-method))
-(defun type-add-method (this info)
+(defun gtype-add-method (this info)
   (let* ((id  (method-info-id info))
 	 (col (gtype-methods this))
 	 (len (arr-count col)))
@@ -236,13 +237,13 @@
 ;; Add a NEW method defined specifically for this type. The name of this
 ;; function is confusing - this is specific to the method named NEW.
 
-(defun type-add-new-method (this info)
+(defun gtype-add-new-method (this info)
   (assert (== (method-info-name info) 'new))
   (setf (gtype-new-method-info-defined this) t)
   (setf (gtype-new-method-info this) info)
   info)
 
-(defun type-set-runtime-type (this name)
+(defun gtype-set-runtime-type (this name)
   (setf (gtype-runtime-name this) name))
 
 

@@ -58,7 +58,11 @@
 ;; (function int (pointer int32) (pointer int32) (pointer int32) none)
 ;; -----------------------------------------------------------------------------
 
-(defstruct typespec type args tags)
+(defstruct typespec
+  (type :none :type (or null symbol))
+  (args nil :type list)
+  (tags nil :type list)
+  )
 
 ;; Construct
 
@@ -236,6 +240,11 @@
 (defun typespec-empty? (this)
   (== 0 (length (typespec-args this))))
 
+(defun typespec-has-single-arg  (this)
+  (== 1 (length (typespec-args this))))
 
 
-
+(defun typespec-get-single-arg  (this)
+  (assert (typespec-args this))
+  (assert (== 1(typespec-args-count this)))
+  (typespec-args-first this))

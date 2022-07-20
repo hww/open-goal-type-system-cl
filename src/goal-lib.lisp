@@ -256,7 +256,7 @@ defaults to CHAR= (for case-sensitive comparison)."
 
 (defmacro align-n (val n)
   "align val to n-byte boundaries"
-  `(logand (- ,n) (+ (the-as int ,val) (- ,n 1)))
+  `(logand (- ,n) (+ (round ,val) (- ,n 1)))
   )
 
 (defmacro align16 (val)
@@ -355,6 +355,8 @@ defaults to CHAR= (for case-sensitive comparison)."
   `(maphash #',func ,hash))
 (defmacro hash-clear! (hash)
   `(clrhash ,hash))
+(defmacro hash-remove! (hash key)
+  `(REMHASH ,hash ,key))
 (defun make-hash (&key (capacity 8))
   (make-hash-table :size capacity))
 
