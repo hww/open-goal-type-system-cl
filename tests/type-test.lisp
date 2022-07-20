@@ -1,7 +1,7 @@
-(in-package :type-system-test)
+(in-package :type-system/test)
 (use-package :type-system/type)
 
-(defun type-test ()
+(defun run-type-test ()
   (let ((mi1 (method-info-new 1 'name1 (typespec-new 'foo1 nil nil) 'foo1 nil t))
         (mi2 (method-info-new 2 'name2 (typespec-new 'foo2 nil nil) 'foo2 nil t)))
     (check-equal? mi1

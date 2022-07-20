@@ -22,18 +22,26 @@
 ;; single tag-value pair
 ;; -----------------------------------------------------------------------------
 
-(defstruct type-tag name value)
+(defstruct type-tag
+  (name nil :type (or null string))
+  (value nil :type (or null string)))
 
 (defun type-tag-new (&rest it)
   "Construct single tagged value"
   (cond
-    ((null it) (make-type-tag :name :none :value nil))
+    ((null it) (make-type-tag :name "none" :value nil))
     ((listp it)
-     (unless (symbolp (car it))
-       (error (format nil "Unexpeced type-tag key ~a" it)))
-     (when (null (cdr it))
-       (error (format nil "Undefined type-tag value ~a" it)))
-     (make-type-tag :name (car it) :value (cadr it)))))
+     (let* ((name-obj (car it))
+            (val-obj (cadr it)))
+       (unless (or (symbolp name-obj) (stringp name-obj))
+         (error (format nil "Unexpeced type-tag key ~a" it)))
+       (when (null (cdr it))
+         (error (format nil "Undefined type-tag value ~a" it)))
+       (unless (or (symbolp val-obj) (stringp val-obj))
+         (error (format nil "Unexpeced type-tag value ~a" it)))
+       (let* ((name-str (if (symbolp name-obj) (symbol-name name-obj) name-obj))
+              (val-str (if (symbolp val-obj) (symbol-name val-obj) val-obj)))
+         (make-type-tag :name name-str :value val-str))))))
 
 (defun type-tag-new* (lst)
   "Construct the list of tags"
@@ -59,18 +67,20 @@
 ;; -----------------------------------------------------------------------------
 
 (defstruct typespec
-  (type :none :type (or null symbol))
+  (type nil :type (or null string))
   (args nil :type list)
   (tags nil :type list)
   )
 
 ;; Construct
 
-(defun typespec-new (&optional (type :none) (args nil) &rest tags)
+(defun typespec-new (&optional (type "none") (args nil) &rest tags)
   (when (and
 	 (== 1 (length tags))
 	 (null (car tags))
 	 (setf tags nil)))
+  (when (symbolp type)
+    (setf type (symbol-name type)))
   (make-typespec :type type :args args :tags (type-tag-new* tags)))
 
 ;; Diff
@@ -85,17 +95,17 @@
   (if (and (typespec-args-empty? this) (typespec-tags-empty? this))
       (format nil "~a" (typespec-type this))
       (let ((result ""))
-	(string-append! result (format nil "(~a (" (typespec-type this)))
-	(string-append! result (string-join (map 'list (lambda (it) (to-str it))
-						 (typespec-args this))
-					    " "))
-	(string-append! result ")")
-	(unless (typespec-tags-empty? this)		    
-	  (map 'list
-	       (lambda (it)
-		 (string-append! result (format nil " :~a ~a" (type-tag-name it) (type-tag-value it))))
-	       (typespec-tags this)))
-	(string-append! result ")"))))
+        (string-append! result (format nil "(~a (" (typespec-type this)))
+        (string-append! result (string-join (map 'list (lambda (it) (to-str it))
+                                                 (typespec-args this))
+                                            " "))
+        (string-append! result ")")
+        (unless (typespec-tags-empty? this)
+          (map 'list
+               (lambda (it)
+                 (string-append! result (format nil " :~a ~a" (type-tag-name it) (type-tag-value it))))
+               (typespec-tags this)))
+        (string-append! result ")"))))
 
 ;; alias fucntion
 
@@ -106,7 +116,7 @@
 ;;
 ;; -----------------------------------------------------------------------------
 
-(defun typespec-substitute-for-method-call (this method-type)
+(defmethod typespec-substitute-for-method-call ((this typespec) (method-type string))
   (let ((result (typespec-new)))
     (if (== (typespec-type this) '-type-)
 	(setf (typespec-type result) method-type)
@@ -120,27 +130,27 @@
 	    (typespec-args this))))
     result))
 
-(defun typespec-is-compatible-child-method (this  implementation child-type)
+(defmethod typespec-is-compatible-child-method ((this typespec) (implementation typespec) (child-type string))
   ;; the base types should be same or if <this> ins the type -type-
   ;; and <implementation> type eqaul child type
   (let ((ok (or (== (typespec-type implementation) (typespec-type this))
-		(and (== (typespec-type this) '_type_)
-		     (== (typespec-type implementation)  child-type)))))
+                (and (== (typespec-type this) "_type_")
+                     (== (typespec-type implementation)  child-type)))))
     (cond
       ((or (not ok)
-	   (!= (typespec-args-count implementation)
-	       (typespec-args-count this)))
+           (!= (typespec-args-count implementation)
+               (typespec-args-count this)))
        ;; if previous test failed and if args count different
        nil)
       (else
        ;; all looks fine, then check each the argument
        (loop for i from 0 to (typespec-args-count this)
-	     do
-		(when (not (typespec-is-compatible-child-method (typespec-args-ref this i)
-								(typespec-args-ref implementation i)
-								child-type))
-		  ;; the argument is not compatible
-		  (return nil)))
+             do
+                (when (not (typespec-is-compatible-child-method (typespec-args-ref this i)
+                                                                (typespec-args-ref implementation i)
+                                                                child-type))
+                  ;; the argument is not compatible
+                  (return nil)))
        ;; no mor arguments
        t))))
 
@@ -150,26 +160,27 @@
 
 ;; Find the tag with the name or return null
 
-(defun typespec-try-get-tag (this tag)
-  (loop for it in (typespec-tags this)
-	do
-	   (when (equalp tag (type-tag-name it))
-	       (return it))))
+(defmethod typespec-try-get-tag ((this typespec) tag)
+  (let ((n (stringify tag)))
+    (loop for it in (typespec-tags this)
+          do
+             (when (equalp n (type-tag-name it))
+               (return it)))))
 
 ;; Make error if there is this tag
 
-(defun typespec-add-new-tag (this tag value)
+(defmethod typespec-add-new-tag ((this typespec) tag value)
   (let ((item (typespec-try-get-tag this tag)))
     (cond
       ((not item)
        (append! (typespec-tags this)
-		(make-type-tag :name tag :value value)))
+		(make-type-tag :name (stringify tag) :value (stringify value))))
       (else
        (error (format nil "Attempted to add a duplicate tag ~a to typespec." tag))))))
 
 ;; Make an error if the tag is not found
 
-(defun typespec-modify-tag (this tag value)
+(defmethod typespec-modify-tag ((this typespec) tag value)
   (let ((item (typespec-try-get-tag this tag)))
     (cond
       ((not item)   (error (format nil "Attempted to modify non existing tag ~a to typespec ~a." tag this)))
@@ -177,7 +188,7 @@
 
 ;; Find amd modify tag or add new for
 
-(defun typespec-add-or-modify-tag (this tag value)
+(defmethod typespec-add-or-modify-tag ((this typespec) tag value)
   (let ((item (typespec-try-get-tag this tag)))
     (cond
       ((not item)   (typespec-add-new-tag this tag value))
@@ -185,7 +196,7 @@
 
 ;; Make exception if there are no this tag
 
-(defun typespec-safe-find-tag (this tag)
+(defmethod typespec-safe-find-tag ((this typespec) tag)
   (let ((item (typespec-try-get-tag this tag)))
     (cond
       ((not item)   (error (format nil "Attempted to find non existing tag ~a to typespec." tag)))
@@ -193,12 +204,12 @@
 
 ;; Check if the tags list empty
 
-(defun typespec-tags-empty? (this)
+(defmethod typespec-tags-empty? ((this typespec))
   (null (typespec-tags this)))
 
 ;; Return number of tags
 
-(defun typespec-tags-couny (this)
+(defmethod typespec-tags-couny ((this typespec))
   (length (typespec-tags this)))
 
 ;; -----------------------------------------------------------------------------
@@ -207,44 +218,44 @@
 
 ;; Check if the arguments list is empty
 
-(defun typespec-args-count (this)
+(defmethod typespec-args-count ((this typespec))
   (length (typespec-args this)))
 
 ;; Reference to the argument
 
-(defun typespec-args-ref (this i)
+(defmethod typespec-args-ref ((this typespec) (i integer))
   (list-ref (typespec-args this) i))
 
 ;; Reference to the argument
 
-(defun typespec-args-last (this)
+(defmethod typespec-args-last ((this typespec))
   (when (typespec-args this)
     (last (typespec-args this))))
 
-(defun typespec-args-first (this)
+(defmethod typespec-args-first ((this typespec))
   (when (typespec-args this)
     (first (typespec-args this))))
 
 ;; Check if the arguments list is empty
 
-(defun typespec-args-empty? (this)
+(defmethod typespec-args-empty? ((this typespec))
   (null (typespec-args this)))
 
 ;; Add the argument
 
-(defun typespec-args-add (this arg)
+(defmethod typespec-args-add ((this typespec) (arg typespec))
   (append! (typespec-args this) arg))
 
 ;; No arguments
 
-(defun typespec-empty? (this)
+(defmethod typespec-empty? ((this typespec))
   (== 0 (length (typespec-args this))))
 
-(defun typespec-has-single-arg  (this)
+(defmethod typespec-has-single-arg  ((this typespec))
   (== 1 (length (typespec-args this))))
 
 
-(defun typespec-get-single-arg  (this)
+(defmethod typespec-get-single-arg  ((this typespec))
   (assert (typespec-args this))
   (assert (== 1(typespec-args-count this)))
   (typespec-args-first this))

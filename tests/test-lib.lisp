@@ -24,6 +24,13 @@
 		    (wrapstring ,a)
 		    (wrapstring ,expected)))))
 
+(defmacro check-true (a)
+  ;; `(is (not (equalp ,a ,expected))
+  ;;      (format nil "~%  Expected not be equal~%   given: ~a~%  expect: ~a~%" ,a ,expected)))
+  `(let ((check-true-result ,a))
+     (unless check-true-result
+       (error (format nil "~%  Expected TRUE given: ~a~%" (wrapstring check-true-result))))))
+
 
 (defun string-trim! (s)
   (let* ((l1 (string-downcase s))

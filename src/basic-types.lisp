@@ -1,4 +1,6 @@
 (in-package :type-system/type)
+(use-package :type-system/interfaces)
+(use-package :type-system/typespec)
 (named-readtables:in-readtable :interpol-syntax)
 ;; ----------------------------------------------------------------------------
 ;;
@@ -16,19 +18,19 @@
 ;; ----------------------------------------------------------------------------
 
 (defstruct field
-   (name nil :type symbol)             ; string?
-   (type nil :type (or null typespec)) ; type-spec?
-   (offset -1 :type integer)           ; int? -1;
-   (is-inline nil :type boolean)       ; bool? false does not make sense if m-type is value, and not an array and not dynamic
-   (is-dynamic nil :type boolean)      ; bool? false;
-   (is-array nil :type boolean)        ; bool? false;
-   (array-size 0 :type integer)        ; int? 0;
-   (alignment -1 :type integer)        ; int?-1;
-   (skip-in-static-decomp
-    nil :type boolean)                 ; bool? = false;
-   (is-user-placed nil :type boolean)  ; bool? = false;  // was this field placed manually by the user?
-   (field-score 0.0 :type float)       ; double? = 0.;
-)
+  (name nil :type (or null symbol))   ; string?
+  (type nil :type (or null typespec)) ; type-spec?
+  (offset -1 :type integer)           ; int? -1;
+  (is-inline nil :type boolean)       ; bool? false does not make sense if m-type is value, and not an array and not dynamic
+  (is-dynamic nil :type boolean)      ; bool? false;
+  (is-array nil :type boolean)        ; bool? false;
+  (array-size 0 :type integer)        ; int? 0;
+  (alignment -1 :type integer)        ; int?-1;
+  (skip-in-static-decomp
+   nil :type boolean)                 ; bool? = false;
+  (is-user-placed nil :type boolean)  ; bool? = false;  // was this field placed manually by the user?
+  (field-score 0.0 :type float)       ; double? = 0.;
+  )
 
 (declaim (ftype (function (symbol typespec integer) field) field-new))
 (defun field-new (name type offset)
@@ -75,50 +77,50 @@
 (defmethod diff ((this field) (other field))
   (field-diff this other))
 (defmethod field-diff ((this field) (other field))  
-  ;(unless (field-p other) (error (incompatible-diff 'field other)))
+                                        ;(unless (field-p other) (error (incompatible-diff 'field other)))
   (my/with-slots l- (field name type offset is-inline is-dynamic
-			   is-array array-size alignment
-			   skip-in-static-decomp
-			   ) this
+                           is-array array-size alignment
+                           skip-in-static-decomp
+                           ) this
     (my/with-slots r- (field name type offset is-inline is-dynamic
-			     is-array array-size alignment
-			     skip-in-static-decomp
-			     ) other
+                             is-array array-size alignment
+                             skip-in-static-decomp
+                             ) other
       (let ((result ""))
-	(when (!= l-name r-name)
-	  (string-append! result (format nil "name: ~a vs. ~a~%" l-name r-name)))
-	(when (!= l-type r-type)
-	  (string-append! result (format nil "type: ~a vs. ~a~%" (inspect l-type) (inspect r-type))))
-	(when (!= l-offset r-offset)
-	  (string-append! result (format nil "offset: ~a vs. ~a~%" l-offset r-offset)))
-	(when (!= l-is-inline r-is-inline)
-	  (string-append! result (format nil "inline: ~a vs. ~a~%" l-is-inline r-is-inline)))
-	(when (!= l-is-dynamic r-is-dynamic)
-	  (string-append! result (format nil "dynamic: ~a vs. ~a~%" l-is-dynamic r-is-dynamic)))
-	(when (!= l-is-array r-is-array)
-	  (string-append! result (format nil "array: ~a vs. ~a~%" l-is-array r-is-array)))
-	(when (!= l-array-size r-array-size)
-	  (string-append! result (format nil "array-size: ~a vs. ~a~%" l-array-size r-array-size)))
-	(when (!= l-alignment r-alignment)
-	  (string-append! result (format nil "alignment: ~a vs. ~a~%" l-alignment r-alignment)))
-	(when (!= l-skip-in-static-decomp r-skip-in-static-decomp)
-	  (string-append! result (format nil "skip-in-static-decomp: ~a vs. ~a~%"
-					 l-skip-in-static-decomp
-					 r-skip-in-static-decomp)))
-	result))))
+        (when (!= l-name r-name)
+          (string-append! result (format nil "name: ~a vs. ~a~%" l-name r-name)))
+        (when (!= l-type r-type)
+          (string-append! result (format nil "type: ~a vs. ~a~%" (inspect l-type) (inspect r-type))))
+        (when (!= l-offset r-offset)
+          (string-append! result (format nil "offset: ~a vs. ~a~%" l-offset r-offset)))
+        (when (!= l-is-inline r-is-inline)
+          (string-append! result (format nil "inline: ~a vs. ~a~%" l-is-inline r-is-inline)))
+        (when (!= l-is-dynamic r-is-dynamic)
+          (string-append! result (format nil "dynamic: ~a vs. ~a~%" l-is-dynamic r-is-dynamic)))
+        (when (!= l-is-array r-is-array)
+          (string-append! result (format nil "array: ~a vs. ~a~%" l-is-array r-is-array)))
+        (when (!= l-array-size r-array-size)
+          (string-append! result (format nil "array-size: ~a vs. ~a~%" l-array-size r-array-size)))
+        (when (!= l-alignment r-alignment)
+          (string-append! result (format nil "alignment: ~a vs. ~a~%" l-alignment r-alignment)))
+        (when (!= l-skip-in-static-decomp r-skip-in-static-decomp)
+          (string-append! result (format nil "skip-in-static-decomp: ~a vs. ~a~%"
+                                         l-skip-in-static-decomp
+                                         r-skip-in-static-decomp)))
+        result))))
 
 (defmethod to-str ((this field))
   (format nil
-	  "[Field] (~a type: ~a offset: ~a) inline ~5a dynamic: ~5a array: ~5a array-size: ~2a align: ~2a skip: ~a"
+          "[Field] (~a type: ~a offset: ~a) inline ~5a dynamic: ~5a array: ~5a array-size: ~2a align: ~2a skip: ~a"
           (field-name this)
           (to-str (field-type this))
           (field-offset this)
-	  (field-is-inline this)
-	  (field-is-dynamic this)
-	  (field-is-array this) 
-	  (field-array-size this)
-	  (field-alignment this) 
-	  (field-skip-in-static-decomp this)))
+          (field-is-inline this)
+          (field-is-dynamic this)
+          (field-is-array this)
+          (field-array-size this)
+          (field-alignment this)
+          (field-skip-in-static-decomp this)))
 
 ;; ----------------------------------------------------------------------------
 ;; The null type
@@ -131,37 +133,37 @@
 
 ;; Constructor
 
-;(declaim (ftype (function (symbol) null-type) null-type-new))
+                                        ;(declaim (ftype (function (symbol) null-type) null-type-new))
 (defun null-type-new (name)
   "Constructor"
   (let* ((base (gtype-new EMPTY-SYMBOL name nil 0))
-	 (new (copy-parent-struct-func :type-system/type (make-null-type) base)))
+         (new (copy-parent-struct-func :type-system/type (make-null-type) base)))
     new))
 
 (defmethod is-reference? ((this null-type))
-    (error "is_reference called on NullType"))
+  (error "is_reference called on NullType"))
 (defmethod get-load-size ((this null-type))
-    (error "get_load_size called on NullType"))
+  (error "get_load_size called on NullType"))
 (defmethod get-size-in-memory ((this null-type))
-    (error "get_size_in_memory called on NullType"))
+  (error "get_size_in_memory called on NullType"))
 (defmethod get-load-signed ((this null-type))
-    (error "get_load_size called on NullType"))
+  (error "get_load_size called on NullType"))
 (defmethod get-offset ((this null-type))
-    (error "get_offset called on NoneType"))
+  (error "get_offset called on NoneType"))
 (defmethod get-in-memory-alignment ((this null-type))
-    (error "get_in_memory_alignment called on NullType"))
+  (error "get_in_memory_alignment called on NullType"))
 (defmethod get-inl-array-stride-align ((this null-type))
-    (error "get_inline_array_start_alignment called on NullType"))
+  (error "get_inline_array_start_alignment called on NullType"))
 (defmethod get-inl-array-start-align ((this null-type))
-    (error "get_inline_array_stride_alignment called on NullType"))
+  (error "get_inline_array_stride_alignment called on NullType"))
 (defmethod get-preferred-reg-class ((this null-type))
-    (error "get_preferred_reg_class called on NullType"))
+  (error "get_preferred_reg_class called on NullType"))
 
 (defmethod compare ((this null-type) other)
   (equalp this other))
 
 (defmethod diff ((this null-type) (other null-type))
-  ;(unless (null-type? other) (error (incompatible-diff 'null-type other)))
+                                        ;(unless (null-type? other) (error (incompatible-diff 'null-type other)))
   (let ((result ""))
     (string-append! result (diff this other))
     (when (!= this other)
@@ -185,16 +187,16 @@
 
 ;; Constructor
 
-;(declaim (ftype (function (symbol symbol boolean integer boolean &optional integer) value-type) value-type-new))
+                                        ;(declaim (ftype (function (symbol symbol boolean integer boolean &optional integer) value-type) value-type-new))
 (defun value-type-new (parent name is-boxed size sign-extend &optional (reg-kind REG-CLASS-INVALID))
   (let* ((base (gtype-new parent name is-boxed 0))
-	 (new (copy-parent-struct-func
-	       :type-system/type
-	       (make-value-type) base
-	       :size size
-	       :offset 0
-	       :sign-extend sign-extend
-	       :reg-kind reg-kind)))
+         (new (copy-parent-struct-func
+               :type-system/type
+               (make-value-type) base
+               :size size
+               :offset 0
+               :sign-extend sign-extend
+               :reg-kind reg-kind)))
     new))
 
 (defmethod is-reference? ((this value-type))
@@ -227,32 +229,32 @@
   (value-type-diff this other))
 
 (defmethod value-type-diff ((this value-type) (other value-type))
- ; (unless (value-type-p other) (error (incompatible-diff 'value-type other)))
+                                        ; (unless (value-type-p other) (error (incompatible-diff 'value-type other)))
   (my/with-slots l. (value-type size offset sign-extend reg-kind) this
     (my/with-slots r. (value-type size offset sign-extend reg-kind) other
 
       (let ((result ""))
-	(string-append! result (gtype-diff this other))
-	(when (!= l.size r.size)
-	  (string-append! result (format nil "size: ~a vs. ~a~%" l.size r.size)))
-	(when (!= l.offset r.offset)
-	  (string-append! result (format nil "offset: ~a vs. ~a~%" l.offset r.offset)))
-	(when (!= l.sign-extend r.sign-extend)
-	  (string-append! result (format nil "sign-extend: ~a vs. ~a~%" l.sign-extend r.sign-extend)))
-	(when (!= l.reg-kind r.reg-kind)
-	  (string-append! result (format nil "reg-kind: ~a vs ~a~%" l.reg-kind r.reg-kind)))
-	result))))
+        (string-append! result (gtype-diff this other))
+        (when (!= l.size r.size)
+          (string-append! result (format nil "size: ~a vs. ~a~%" l.size r.size)))
+        (when (!= l.offset r.offset)
+          (string-append! result (format nil "offset: ~a vs. ~a~%" l.offset r.offset)))
+        (when (!= l.sign-extend r.sign-extend)
+          (string-append! result (format nil "sign-extend: ~a vs. ~a~%" l.sign-extend r.sign-extend)))
+        (when (!= l.reg-kind r.reg-kind)
+          (string-append! result (format nil "reg-kind: ~a vs ~a~%" l.reg-kind r.reg-kind)))
+        result))))
 
 (defmethod to-str ((this value-type))
   (let ((result ""))
     (string-append!
      result
      (format nil "[ValueType] ~a~% parent: ~a~% boxed: ~a~% size: ~a~% sext: ~a~%"
-	     (gtype-name this)
-	     (gtype-parent this)
-	     (gtype-is-boxed this)
-	     (value-type-size this)
-	     (value-type-sign-extend this)))
+             (gtype-name this)
+             (gtype-parent this)
+             (gtype-is-boxed this)
+             (value-type-size this)
+             (value-type-sign-extend this)))
     (string-append! result (methods-to-str this))
     result))
 
@@ -275,10 +277,10 @@
 
 ;; Constructor
 
-;(declaim (ftype (function (symbol symbol boolean integer) reference-type) reference-type-new))
+                                        ;(declaim (ftype (function (symbol symbol boolean integer) reference-type) reference-type-new))
 (defun reference-type-new (parent name is-boxed heap-base)
   (let* ((base (gtype-new parent name is-boxed heap-base))
-	 (new (copy-parent-struct-func :type-system/type (make-reference-type) base)))
+         (new (copy-parent-struct-func :type-system/type (make-reference-type) base)))
     new))
 
 (defmethod is-reference? ((this reference-type))
@@ -304,17 +306,17 @@
 (defmethod to-str ((this reference-type))
   (string-append
    (format nil "[ReferenceType] ~a~% parent: ~a~% boxed: ~a~%"
-	   (gtype-name this)
-	   (gtype-parent this)
-	   (gtype-is-boxed this))
+           (gtype-name this)
+           (gtype-parent this)
+           (gtype-is-boxed this))
    (methods-to-str this)))
- 
+
 (defmethod compare ((this reference-type) (other reference-type))
   (equal? this other))
 
 (defmethod diff ((this reference-type) (other reference-type))
   (gtype-diff this other))
-  
+
 ;; ----------------------------------------------------------------------------
 ;; The struct type
 ;;
@@ -341,18 +343,18 @@
 (defun struct-type-new (parent name boxed dynamic pack heap-base)
   "Constructor"
   (let* ((base (reference-type-new parent name boxed heap-base))
-	 (new (copy-parent-struct-func
-	       :type-system/type
-	       (make-struct-type)
-	       base
-	       :fields (arr-new :element-type :field)
-	       :dynamic dynamic
-	       :size-in-mem 0      
-	       :pack pack
-	       :allow-misalign nil
-	       :offset 0
-	       :always-stack-singleton nil
-	       :idx-of-first-unique-field 0)))
+         (new (copy-parent-struct-func
+               :type-system/type
+               (make-struct-type)
+               base
+               :fields (arr-new :element-type :field)
+               :dynamic dynamic
+               :size-in-mem 0
+               :pack pack
+               :allow-misalign nil
+               :offset 0
+               :always-stack-singleton nil
+               :idx-of-first-unique-field 0)))
     new))
 
 
@@ -383,65 +385,65 @@
 (defmethod diff ((this struct-type) (other struct-type))
   (struct-type-diff this other))
 (defmethod struct-type-diff ((this struct-type) (other struct-type))
-  ;(unless (struct-type? other) (error (incompatible-diff 'struct-type other)))
+                                        ;(unless (struct-type? other) (error (incompatible-diff 'struct-type other)))
   (my/with-slots l- (struct-type
-                          fields dynamic size-in-mem pack allow-misalign offset
-                          always-stack-singleton idx-of-first-unique-field) this
-  (my/with-slots r- (struct-type
-                          fields dynamic size-in-mem pack allow-misalign offset
-                          always-stack-singleton idx-of-first-unique-field) other
-    (let* ((l-fields.size (arr-count l-fields))
-	   (r-fields.size (arr-count r-fields))
-	   (min-fields (min l-fields.size r-fields.size))
-	   (result ""))
-      (string-append! result (gtype-diff this other))
-      (when (!= l-fields r-fields)
-	(when (!= l-fields.size r-fields.size)
-	  (string-append! result (format nil "Number of fields ~a vs. ~a~%" l-fields.size r-fields.size)))
+                     fields dynamic size-in-mem pack allow-misalign offset
+                     always-stack-singleton idx-of-first-unique-field) this
+    (my/with-slots r- (struct-type
+                       fields dynamic size-in-mem pack allow-misalign offset
+                       always-stack-singleton idx-of-first-unique-field) other
+      (let* ((l-fields.size (arr-count l-fields))
+             (r-fields.size (arr-count r-fields))
+             (min-fields (min l-fields.size r-fields.size))
+             (result ""))
+        (string-append! result (gtype-diff this other))
+        (when (!= l-fields r-fields)
+          (when (!= l-fields.size r-fields.size)
+            (string-append! result (format nil "Number of fields ~a vs. ~a~%" l-fields.size r-fields.size)))
 
-	(dotimes (i min-fields)
-	  (let ((lf (arr-ref l-fields i))
-		(rf (arr-ref r-fields i)))
-	    (when (!= lf rf)
-	      (string-append! result (format nil "field ~a (~a/~a):~%"
-					     i (field-name lf) (field-name rf)))
-	      (field-diff lf rf)))))
+          (dotimes (i min-fields)
+            (let ((lf (arr-ref l-fields i))
+                  (rf (arr-ref r-fields i)))
+              (when (!= lf rf)
+                (string-append! result (format nil "field ~a (~a/~a):~%"
+                                               i (field-name lf) (field-name rf)))
+                (field-diff lf rf)))))
 
-      (when (!= l-dynamic r-dynamic)
-	(string-append! result (format nil "dynamic: ~a vs. ~a~%" l-dynamic r-dynamic)))
-      (when (!= l-size-in-mem r-size-in-mem)
-	(string-append! result (format nil "size-in-mem: ~a vs. ~a~%" l-size-in-mem r-size-in-mem)))
-      (when (!= l-pack r-pack)
-	(string-append! result (format nil "pack: ~a vs. ~a~%" l-pack r-pack)))
-      (when (!= l-allow-misalign r-allow-misalign)
-	(string-append! result (format nil "allow-misalign: ~a vs. ~a~%" l-allow-misalign r-allow-misalign)))
-      (when (!= l-always-stack-singleton r-always-stack-singleton)
-	(string-append! result (format nil "always-stack-singleton: ~a vs. ~a~%"
-				       l-always-stack-singleton
-				       r-always-stack-singleton)))
-      (when (!= l-offset r-offset)
-	(string-append! result (format nil "offset: ~a vs. ~a~%" l-offset r-offset)))
-      (when (!= l-idx-of-first-unique-field r-idx-of-first-unique-field)
-	(string-append! result (format nil "idx-of-first-unique-field: ~a vs. ~a~%"
-				       l-idx-of-first-unique-field
-				       r-idx-of-first-unique-field)))
-      result))))
+        (when (!= l-dynamic r-dynamic)
+          (string-append! result (format nil "dynamic: ~a vs. ~a~%" l-dynamic r-dynamic)))
+        (when (!= l-size-in-mem r-size-in-mem)
+          (string-append! result (format nil "size-in-mem: ~a vs. ~a~%" l-size-in-mem r-size-in-mem)))
+        (when (!= l-pack r-pack)
+          (string-append! result (format nil "pack: ~a vs. ~a~%" l-pack r-pack)))
+        (when (!= l-allow-misalign r-allow-misalign)
+          (string-append! result (format nil "allow-misalign: ~a vs. ~a~%" l-allow-misalign r-allow-misalign)))
+        (when (!= l-always-stack-singleton r-always-stack-singleton)
+          (string-append! result (format nil "always-stack-singleton: ~a vs. ~a~%"
+                                         l-always-stack-singleton
+                                         r-always-stack-singleton)))
+        (when (!= l-offset r-offset)
+          (string-append! result (format nil "offset: ~a vs. ~a~%" l-offset r-offset)))
+        (when (!= l-idx-of-first-unique-field r-idx-of-first-unique-field)
+          (string-append! result (format nil "idx-of-first-unique-field: ~a vs. ~a~%"
+                                         l-idx-of-first-unique-field
+                                         r-idx-of-first-unique-field)))
+        result))))
 
 (defmethod to-str ((this struct-type))
   (struct-type-to-str this))
 (defmethod struct-type-to-str ((this struct-type))
   (let ((result ""))
     (string-append! result (format nil "[StructType] ~a~% parent: ~a~% boxed: ~a~% size: ~a~% pack: ~a~%"
-				   (gtype-name this)
-				   (gtype-parent this)
-				   (gtype-is-boxed this)
-				   (struct-type-size-in-mem this)
-				   (struct-type-pack this)))
+                                   (gtype-name this)
+                                   (gtype-parent this)
+                                   (gtype-is-boxed this)
+                                   (struct-type-size-in-mem this)
+                                   (struct-type-pack this)))
     (string-append! result (format nil " misalign: ~a~% heap-base: ~a~% stack-singleton: ~a~% fields:~%~a~%"
-				   (struct-type-allow-misalign this)
-				   (gtype-heap-base this)
-				   (struct-type-always-stack-singleton this)
-				   (struct-type-inspect-fields this)))
+                                   (struct-type-allow-misalign this)
+                                   (gtype-heap-base this)
+                                   (struct-type-always-stack-singleton this)
+                                   (struct-type-inspect-fields this)))
     (string-append! result (format nil " methods:~%"))
     (string-append! result (methods-to-str this))
     (string-append! result (format nil "~%"))
@@ -461,8 +463,8 @@
        ;; TODO - I don't know if GOAL actually did this check, maybe packed inline arrays could
        ;; violate these?
        (loop for field across (struct-type-fields this)
-	     do
-		(set! alignment (max alignment (field-alignment field))))
+             do
+                (set! alignment (max alignment (field-alignment field))))
        alignment))
     (else
      ;; make elements of inline array properly aligned structures
@@ -476,8 +478,8 @@
        ;; TODO - I don't know if GOAL actually did this check, maybe packed inline arrays could
        ;; violate these?
        (loop for field across (struct-type-fields this)
-	     do
-		(set! alignment (max alignment (field-alignment field))))
+             do
+                (set! alignment (max alignment (field-alignment field))))
        alignment))
     (else
      ;; make elements of inline array properly aligned structures
@@ -486,22 +488,22 @@
 ;; Find the filed by name
 
 (defun struct-type-lookup-field (this name)
-;  (-> struct-type? symbol? (or/c nil field?))
+                                        ;  (-> struct-type? symbol? (or/c nil field?))
   (find name (struct-type-fields this) :key #'field-name))
 
 ;; Print all fields
 
 (defun struct-type-inspect-fields (this)
- ; (-> struct-type? string?)
+                                        ; (-> struct-type? string?)
   (apply 'string-append
          (map 'list
-	      #'(lambda (f) (format nil "    ~a~%" (inspect f)))
+              #'(lambda (f) (format nil "    ~a~%" (inspect f)))
               (struct-type-fields this))))
 
 ;; Find the method wih name
 
 (defun struct-lookup-field (this name)
-  ;(-> struct-type? symbol? method-info?)
+                                        ;(-> struct-type? symbol? method-info?)
   (find name (struct-type-fields this) :key #'method-info-name))
 
 (defun struct-type-inherit (this parent)
@@ -512,29 +514,29 @@
   (setf (struct-type-idx-of-first-unique-field this) (arr-count (struct-type-fields parent))))
 
 (defun struct-type-add-field (this f new-size-in-mem)
-  ;(-> struct-type? field? integer? void)
+                                        ;(-> struct-type? field? integer? void)
   (arr-push (struct-type-fields this) f)
-  ;(printf "ADD FIELD (~a) NEW-SIZE ~a~%" (inspect f) new-size-in-mem)
+                                        ;(printf "ADD FIELD (~a) NEW-SIZE ~a~%" (inspect f) new-size-in-mem)
   (setf (struct-type-size-in-mem this) new-size-in-mem))
 
 (defun struct-type-get-size-in-memory (this)
-;  (-> struct-type? integer?)
+                                        ;  (-> struct-type? integer?)
   (struct-type-size-in-mem this))
 
 (defun struct-type-override-size-in-memory (this size)
- ; (-> struct-type? integer? void?)
+                                        ; (-> struct-type? integer? void?)
   (setf (struct-type-size-in-mem this) size))
 
 (defun struct-type-override-offset (this offset)
-  ;(-> struct-type? integer? void)
+                                        ;(-> struct-type? integer? void)
   (setf (struct-type-offset this) offset))
 
 (defun struct-type-fields-count (this)
-  ;(-> struct-type? integer?)
+                                        ;(-> struct-type? integer?)
   (arr-count (struct-type-fields this)))
 
 (defun struct-type-fields-ref (this idx)
-  ;(-> struct-type? integer? field?)
+                                        ;(-> struct-type? integer? field?)
   (arr-ref (struct-type-fields this) idx))
 
 
@@ -555,26 +557,26 @@
 
 (defmethod diff ((this basic-type) (other basic-type))
   (basic-type-diff this other))
-  
+
 (defun basic-type-new (parent name &optional (dynamic nil) (heap-size 0))
   (let* ((base (struct-type-new parent name T dynamic nil heap-size))
-	 (new  (copy-parent-struct-func
-		:type-system/type (make-basic-type) base :is-final nil)))
+         (new  (copy-parent-struct-func
+                :type-system/type (make-basic-type) base :is-final nil)))
     new))
-    
-    
+
+
 (defmethod basic-type-diff ((this basic-type) (other basic-type))
   ;;(unless (basic-type-p other) (error (incompatible-diff 'basic-type other)))
   (my/with-slots
-   l- (basic-type is-final) this
-   (my/with-slots
-    r- (basic-type is-final) other
-    (string-append
-     (flatten
-      (list
-       (struct-type-diff this other)
-       (when (!= l-is-final r-is-final)
-	 (format nil "final: ~a vs. ~a~%" l-is-final r-is-final))))))))
+      l- (basic-type is-final) this
+    (my/with-slots
+        r- (basic-type is-final) other
+      (string-append
+       (flatten
+        (list
+         (struct-type-diff this other)
+         (when (!= l-is-final r-is-final)
+           (format nil "final: ~a vs. ~a~%" l-is-final r-is-final))))))))
 
 
 ;; Make this type as final
@@ -587,8 +589,8 @@
 ;; ----------------------------------------------------------------------------
 
 (defstruct sbitfield 
-  (type nil :type (or null symbol))         ; type-spec?
-  (name nil :type (or null symbol))         ; string?
+  (type nil :type (or null typespec))         ; type-spec?
+  (name nil :type (or null string))         ; string?
   (offset -1 :type integer)                 ; int? -1;  in bits
   (size -1 :type integer)                   ; int = -1; in bits.
   (skip-in-static-decomp nil :type boolean) ; bool? = false;
@@ -599,7 +601,7 @@
 
 (defun sbitfield-new (type name offset size skip-in-static-decomp)
   (make-sbitfield :type type :name name :offset offset :size size
-  :skip-in-static-decomp skip-in-static-decomp))
+                  :skip-in-static-decomp skip-in-static-decomp))
 
 (defmethod to-str ((this sbitfield))
   (format nil "[~a ~a] sz ~a off ~a"
@@ -613,22 +615,22 @@
   (sbitfield-diff this other))
 
 (defmethod sbitfield-diff ((this sbitfield) (other sbitfield))
-  ;(unless (sbitfield-p other) (error (incompatible-diff 'sbitfield other)))
+                                        ;(unless (sbitfield-p other) (error (incompatible-diff 'sbitfield other)))
   (my/with-slots l. (sbitfield type name offset size skip-in-static-decomp) this
     (my/with-slots r. (sbitfield type name offset size skip-in-static-decomp) other
       (let ((result ""))
-	(when (!= l.type r.type)
-	  (string-append! result (format nil "type: ~a vs. ~a~%" (inspect l.type) (inspect r.type))))
-	(when (!= l.name r.name)
-	  (string-append! result (format nil "name: ~a vs. ~a~%" l.name r.name)))
-	(when (!= l.offset r.offset)
-	  (string-append! result (format nil "offset: ~a vs. ~a~%" l.offset r.offset)))
-	(when (!= l.size r.size)
-	  (string-append! result (format nil "size: ~a vs. ~a~%" l.size r.size)))
-	(when (!= l.skip-in-static-decomp r.skip-in-static-decomp)
-	  (string-append! result (format nil "skip-in-static-decomp: ~a vs. ~a~%" l.skip-in-static-decomp
-					 r.skip-in-static-decomp)))
-	result))))
+        (when (!= l.type r.type)
+          (string-append! result (format nil "type: ~a vs. ~a~%" (inspect l.type) (inspect r.type))))
+        (when (!= l.name r.name)
+          (string-append! result (format nil "name: ~a vs. ~a~%" l.name r.name)))
+        (when (!= l.offset r.offset)
+          (string-append! result (format nil "offset: ~a vs. ~a~%" l.offset r.offset)))
+        (when (!= l.size r.size)
+          (string-append! result (format nil "size: ~a vs. ~a~%" l.size r.size)))
+        (when (!= l.skip-in-static-decomp r.skip-in-static-decomp)
+          (string-append! result (format nil "skip-in-static-decomp: ~a vs. ~a~%" l.skip-in-static-decomp
+                                         r.skip-in-static-decomp)))
+        result))))
 
 ;; ----------------------------------------------------------------------------
 ;; BitfieldType
@@ -642,9 +644,9 @@
 
 (defun bitfield-type-new (parent name  size sign-extend)
   (let* ((base (value-type-new parent name nil size sign-extend))
-	 (new (copy-parent-struct-func
-	       :type-system/type (make-bitfield-type) base
-	       :fields (arr-new))))
+         (new (copy-parent-struct-func
+               :type-system/type (make-bitfield-type) base
+               :fields (arr-new))))
     new))
 
 (defmethod to-str ((this bitfield-type))
@@ -654,17 +656,17 @@
      (format nil "Parent type: ~a~%Fields:~%" (gtype-parent this)))
 
     (loop for it across  (bitfield-type-fields this)
-	  do
-	     (string-append!
-	      result
-	      (format nil "~a~%" (inspect it))))
+          do
+             (string-append!
+              result
+              (format nil "~a~%" (inspect it))))
     (string-append!
      result
      (format nil "Mem size: ~a, load size: ~a, signed ~a, align ~a~%"
-	     (get-size-in-memory this)
-	     (get-load-size this)
-	     (get-load-signed this)
-	     (get-in-memory-alignment this)))
+             (get-size-in-memory this)
+             (get-load-size this)
+             (get-load-signed this)
+             (get-in-memory-alignment this)))
     result))
 
 ;; Diff for this type
@@ -672,32 +674,32 @@
   (enum-type-diff this other))
 
 (defmethod enum-type-diff ((this bitfield-type) (other bitfield-type))
-  ;(unless (bitfield-type? other) (error (incompatible-diff 'bitfield-type other)))
+                                        ;(unless (bitfield-type? other) (error (incompatible-diff 'bitfield-type other)))
   (my/with-slots l- (bitfield-type fields) this
     (my/with-slots r- (bitfield-type fields) other
       (let* ((l-fields-size (arr-count l-fields))
-	     (r-fields-size (arr-count r-fields))
-	     (min-fields (min l-fields-size r-fields-size))
-	     (result ""))
-	(string-append! result (gtype-diff this other))
-	(string-append! result (value-type-diff this other))
+             (r-fields-size (arr-count r-fields))
+             (min-fields (min l-fields-size r-fields-size))
+             (result ""))
+        (string-append! result (gtype-diff this other))
+        (string-append! result (value-type-diff this other))
 
-	(when (!= l-fields r-fields)
-	  (when (!= l-fields-size r-fields-size)
-	    (string-append!
-	     result
-	     (format nil "Number of fields ~a vs. ~a~%" l-fields-size r-fields-size)))
+        (when (!= l-fields r-fields)
+          (when (!= l-fields-size r-fields-size)
+            (string-append!
+             result
+             (format nil "Number of fields ~a vs. ~a~%" l-fields-size r-fields-size)))
 
-	  (dotimes (i min-fields)
-	    (let ((lf (arr-ref l-fields i))
-		  (rf (arr-ref r-fields i)))
-	      (when (!= lf rf)
-		(string-append!
-		 result
-		 (format nil "field ~a (~a/~a):~%~a~%"
-			 i (sbitfield-name lf) (sbitfield-name rf)
-			 (sbitfield-diff lf rf)))))))
-	result))))
+          (dotimes (i min-fields)
+            (let ((lf (arr-ref l-fields i))
+                  (rf (arr-ref r-fields i)))
+              (when (!= lf rf)
+                (string-append!
+                 result
+                 (format nil "field ~a (~a/~a):~%~a~%"
+                         i (sbitfield-name lf) (sbitfield-name rf)
+                         (sbitfield-diff lf rf)))))))
+        result))))
 
 ;; Find the method wih name
 
@@ -741,38 +743,37 @@
 ;; Diff for this type
 
 (defmethod diff ((this enum-type) (other enum-type))
-  ;(unless (enum-type? other) (error (incompatible-diff 'enum-type other)))
+                                        ;(unless (enum-type? other) (error (incompatible-diff 'enum-type other)))
   (my/with-slots l- (enum-type is-bitfield entries) this
     (my/with-slots r- (enum-type is-bitfield entries) other
       (let* ((l-entries-size (hash-count l-entries))
-	     (r-entries-size (hash-count r-entries))
-	     (result ""))
-       
-	(string-append! result (gtype-diff this other))
-	(string-append! result (value-type-diff this other))
+             (r-entries-size (hash-count r-entries))
+             (result ""))
 
-	(when (!= l-is-bitfield r-is-bitfield)
-	  (string-append! result (format nil "is_bitfield: ~a vs ~a~%" l-is-bitfield r-is-bitfield)))
+        (string-append! result (gtype-diff this other))
+        (string-append! result (value-type-diff this other))
 
-	(when (!= l-entries r-entries)
-	  (string-append! result (format nil "Entries are different:~%"))
-	  (when (!= l-entries-size r-entries-size)
-	    (string-append!
-	     result
-	     (format nil "Number of entries ~a vs ~a~%" l-entries-size r-entries-size)))
+        (when (!= l-is-bitfield r-is-bitfield)
+          (string-append! result (format nil "is_bitfield: ~a vs ~a~%" l-is-bitfield r-is-bitfield)))
 
-	  (hash-map l-entries
-		    (lambda (lk lv)
-		      (let ((rv (hash-ref r-entries lk)))
-			(cond
-			  ((not rv)
-			   (string-append!
-			    result
-			    (format nil "  ~a is in one, but not the other-~%" lk)))
-			  ((!= lv rv)
-			   (string-append!
-			    result
-			    (format nil "  ~a is defined differently: ~a vs ~a~%"
-				    lk lv rv))))))))
-	result))))
+        (when (!= l-entries r-entries)
+          (string-append! result (format nil "Entries are different:~%"))
+          (when (!= l-entries-size r-entries-size)
+            (string-append!
+             result
+             (format nil "Number of entries ~a vs ~a~%" l-entries-size r-entries-size)))
 
+          (hash-map l-entries
+                    (lambda (lk lv)
+                      (let ((rv (hash-ref r-entries lk)))
+                        (cond
+                          ((not rv)
+                           (string-append!
+                            result
+                            (format nil "  ~a is in one, but not the other-~%" lk)))
+                          ((!= lv rv)
+                           (string-append!
+                            result
+                            (format nil "  ~a is defined differently: ~a vs ~a~%"
+                                    lk lv rv))))))))
+        result))))

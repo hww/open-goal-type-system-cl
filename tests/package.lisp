@@ -7,16 +7,18 @@
    :check-equal?
    :check-not-equal?
    :check-equal-downcase?
+   :check-true
    ))
 
-(uiop:define-package #:type-system-test
+(uiop:define-package #:type-system/test
   (:use #:cl #:type-system #:test-lib #:alexandria)
   (:import-from :type-system)
   (:export
    :test!
-   :typespec
-   :type-test
-   :basic-types-test
+   :run-typespec-test
+   :run-type-test
+   :run-basic-types-test
+   :run-type-system-test
    )
   (:reexport
    :type-system

@@ -20,16 +20,17 @@
 
 (defstruct method-info
   (id -1 :type integer)
-  (name EMPTY-SYMBOL :type symbol)
+  (name nil :type (or null string))
   (type nil :type (or null typespec))
-  (defined-in-type nil :type symbol)
+  (defined-in-type nil :type (or null string))
   (no-virtual nil :type boolean)
   (override nil :type boolean)
   )
 
 (defun method-info-new (id name type defined-in-type &optional (no-virtual nil) (override nil))
-  (make-method-info :id id :name name :type type :defined-in-type defined-in-type
-		    :no-virtual no-virtual :override override))
+  (make-method-info :id id :name (stringify name) :type type
+                    :defined-in-type (stringify defined-in-type)
+                    :no-virtual no-virtual :override override))
   		
 ;; One line inspector
 
@@ -98,18 +99,17 @@
 ;; Default constructor
 
 (defstruct gtype
-  (methods (arr-new :element-type :method-info)
-	    :type array)                      ; vector<method-info>
-  (states (make-hash-table) :type hash-table) ; hash<string,type-spec>
-  (new-method-info nil :type (or null method-info)) ; MethodInfo
-  (new-method-info-defined nil :type boolean) ; false
-  (generate-inspect t :type boolean)          ; true
-  (parent 'none :type symbol)                 ; string?  the parent type (is empty for none and object)
-  (name 'none :type symbol)                   ; string?
-  (allow-in-runtime t :type boolean)          ; bool? true;
-  (runtime-name EMPTY-SYMBOL :type symbol)    ; string?
-  (is-boxed nil :type boolean)                ; bool? false  // does this have runtime type information?
-  (heap-base 0 :type integer)                 ; int? 0
+  (methods (arr-new :element-type :method-info) :type array)
+  (states (make-hash-table) :type hash-table)
+  (new-method-info nil :type (or null method-info))
+  (new-method-info-defined nil :type boolean)
+  (generate-inspect t :type boolean)
+  (parent nil :type (or null string))
+  (name nil :type (or null string))
+  (allow-in-runtime t :type boolean)
+  (runtime-name nil :type (or null string))
+  (is-boxed nil :type boolean)
+  (heap-base 0 :type integer)
   )
 
 (defmethod is-reference? ((this gtype))
@@ -139,14 +139,14 @@
 
 ;; Typical constructor
 
-(declaim (ftype (function (symbol symbol boolean integer) gtype) gtype-new))
+(declaim (ftype (function ((or null symbol string) (or symbol string) boolean integer) gtype) gtype-new))
 (defun gtype-new (parent name is-boxed heap-base)
   (let ((it (make-gtype)))
-    (setf (gtype-parent it) parent)
-    (setf (gtype-name it) name)
+    (setf (gtype-parent it) (stringify parent))
+    (setf (gtype-name it) (stringify name))
     (setf (gtype-is-boxed it) is-boxed)
     (setf (gtype-heap-base it) heap-base)
-    (setf (gtype-runtime-name it) name)
+    (setf (gtype-runtime-name it) (stringify name))
     it))
 
 (defun gtype-base-type (this)

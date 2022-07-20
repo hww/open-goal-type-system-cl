@@ -50,6 +50,14 @@
 ;; STRING TOOLS
 ;; ==============================================================================;;;;
 
+
+(defun stringify (v)
+  (cond
+    ((null v) v)
+    ((stringp v) v)
+    ((symbolp v) (symbol-name v))
+    (t (format nil "~a" v))))
+
 (defun string-append (&rest list)
   (format nil "~{~a~}" (remove nil list)))
 
@@ -356,9 +364,9 @@ defaults to CHAR= (for case-sensitive comparison)."
 (defmacro hash-clear! (hash)
   `(clrhash ,hash))
 (defmacro hash-remove! (hash key)
-  `(REMHASH ,hash ,key))
-(defun make-hash (&key (capacity 8))
-  (make-hash-table :size capacity))
+  `(REMHASH ,key ,hash))
+(defun make-hash (&key (capacity 8) (test 'equal))
+  (make-hash-table :size capacity :test test))
 
 ;; ==============================================================================
 ;; The structure helpers

@@ -39,12 +39,11 @@
   ;;(-> type-system?)
   (let ((this (make-type-system
                :types (make-hash)
-               :forward-declared-types	(make-hash)
+               :forward-declared-types (make-hash)
                :forward-declared-method-counts (make-hash)
                :old-types (arr-new :capacity 256)
                :allow-redefinition t)))
-    ;; TODO
-    ;;    (define-initial this)
+    (define-initial this)
     this))
 
 
@@ -53,73 +52,76 @@
 ;; ------------------------------------------------------------------------------
 
 ;; Find the type
-(defun types-find (this name)
+(defmethod types-find ((this type-system) (name string))
   ;;(-> type-system? symbol? (or/c #f type?))
   (hash-ref (type-system-types this) name nil))
 
-(defun types-set! (this name val)
+(defmethod types-set! ((this type-system) (name string) val)
   ;;(-> type-system? symbol? type? void?)
   (hash-set! (type-system-types this) name val))
 
 ;; Find the type
-(defun forward-declared-types-find (this name)
+(defmethod forward-declared-types-find ((this type-system) (name string))
   ;;(-> type-system? symbol? (or/c nil symbol?))
   (hash-ref (type-system-forward-declared-types this) name nil))
 
-(defun forward-declared-types-set! (this name val)
+(defmethod forward-declared-types-set! ((this type-system) (name string) (val string))
   ;;(-> type-system? symbol? symbol? void?)
   (hash-set! (type-system-forward-declared-types this) name val))
 
 ;; Find the type
-(defun forward-declared-method-counts-find (this name)
+(defmethod forward-declared-method-counts-find ((this type-system) (name string))
   ;;(-> type-system? symbol? (or/c nil symbol?))
   (hash-ref (type-system-forward-declared-method-counts this) name nil))
 
-(defun forward-declared-method-counts-set! (this name val)
+(defmethod forward-declared-method-counts-set! ((this type-system) (name string) (val integer))
   ;;(-> type-system? symbol? integer? void?)
   (hash-set! (type-system-forward-declared-method-counts this) name val))
 
 ;; Store old type
 
-(defun old-types-push (this item)
+(defmethod old-types-push ((this type-system) (item gtype))
   ;;(-> type-system? any/c void?)
   (arr-push (type-system-old-types this) item))
 
 ;; Debugging function to print out all types, and their methods and fields.
 
-(defun inspect-all-type-information (this)
+(defmethod inspect-all-type-information ((this type-system))
   ;;;(-> type-system? string?)
   (string-append
    #?"\nALL TYPES ===================\n"
-   (string-join (hash-map (type-system-types this)
-			  (lambda (k v) (assert k) (inspect v))) #?"\n")
+   (string-join
+    (hash-map
+     (type-system-types this)
+     (lambda (k v) #?"{k} {(to-str v)}"))
+    #\newline)
    #?"\nEND OF ALL TYPES ============\n"))
 
 ;; Clear types
-(defun types-clear (this)
+(defmethod types-clear ((this type-system))
   ;;(-> type-system? void)
   (hash-clear! (type-system-types this))
   (hash-clear! (type-system-forward-declared-types this))
   (hash-clear! (type-system-forward-declared-method-counts this))
   (setf (type-system-old-types this) (arr-new :capacity 256))
   ;; TODO
-;;  (define-initial this)
+  (define-initial this)
   )
 
-(defun define-initial (this)
+(defmethod define-initial ((this type-system))
   ;;(-> type-system? void?)
   ;; the "none" and "_type_" types are included by default.
-  (add-type this 'none      (null-type-new 'none))
-  (add-type this '_type_    (null-type-new '_type_))
-  (add-type this '_varargs_ (null-type-new '_varargs_))
+  (add-type this "none"      (null-type-new "none"))
+  (add-type this "_type_"    (null-type-new "_type_"))
+  (add-type this "_varargs_" (null-type-new "_varargs_"))
   ;; OBJECT
-  (add-type this 'object    (value-type-new 'object 'object nil 4 nil))
+  (add-type this "object"    (value-type-new "object" "object" nil 4 nil))
   )
 
 ;; ==============================================================================
 
 (defun base-type (o)
-  ;;(-> (or/c type? type-spec?) symbol?)
+  ;;(-> (or/c type? typespec?) symbol?)
   (cond
     ((typespec-p o) (typespec-basetype o))
     ((gtype-p o) (gtype-base-type o))
@@ -164,17 +166,19 @@
         (else
          ;; newly defined!
          ;; none/object get to skip these checks because they are roots.
-         (when (and (!= name 'object)
-                    (!= name 'none)
-                    (!= name '-type-)
-                    (!= name '-varargs-))
+         (when (and (!= name "object")
+                    (!= name "none")
+                    (!= name "_type_")
+                    (!= name "_varargs_"))
            (when (forward-declared-types-find this (gtype-get-parent type))
              (error (format nil "Cannot create new type `~a`. The parent type `~a` is not fully defined.\n"
                             (gtype-name type) (gtype-get-parent type))))
 
            (unless (types-find this (gtype-get-parent type))
-             (error (format nil "Cannot create new type `~a`. The parent type `~a` is not defined.\n"
-                            (gtype-name type) (gtype-get-parent type)))))
+             (error (format
+                     nil
+                     "Cannot create new type `~a`. The parent type `~a` is not defined.\n"
+                     (gtype-name type) (gtype-get-parent type)))))
 
          (types-set! this name type)
          (let ((fwd-it (forward-declared-types-find this name)))
@@ -205,7 +209,7 @@
     (let ((it (forward-declared-types-find this name )))
       (if it
           (error (format nil "Tried to forward declare ~a as a type multiple times.  Previous: ~a Current: object" name it))
-          (forward-declared-types-set! this name 'object)))))
+          (forward-declared-types-set! this name "object")))))
 
 ;; Inform the type system that there will eventually be a type named "name"
 ;; and that it's a basic. This allows the type to be used in a few specific
@@ -404,7 +408,7 @@
 
 (defun fully-defined-type-exists (this type-or-name)
   ;;(-> type-system? (or/c symbol? typespec?) any/c)
-      (if (symbolp type-or-name)
+      (if (stringp type-or-name)
           (types-find this type-or-name)
           (fully-defined-type-exists this (base-type type-or-name))))
 
@@ -418,12 +422,13 @@
 
 ;; Make the type specification for the type
 ;
-(defun make-a-typespec (this name)
+(defmethod make-a-typespec ((this type-system) (name string))
   ;;(-> type-system? symbol? typespec?)
   (if (or (types-find this name)
           (forward-declared-types-find this name))
-        (typespec-new name)
-        (error (format nil "Type `~a` is unknown" name))))
+      (typespec-new name)
+      (progn
+        (error (format nil "Can't make a typespec because type `~a` is unknown" name)))))
 
 
 (defun make-array-typespec (element-type)
@@ -445,7 +450,7 @@
 
 (defun make-pointer-typespec (this type-or-name)
   ;;(-> type-system? (or/c symbol? typespec?) typespec?)
-  (if (symbolp type-or-name)
+  (if (stringp type-or-name)
       (typespec-new this 'pointer (make-a-typespec this type-or-name))
       (typespec-new this 'pointer type-or-name)))
 
@@ -453,7 +458,7 @@
 
 (defun make-inline-array-typespec (this type)
   ;;(-> type-system? (or/c symbolp typespec?) typespec?)
-  (if (symbolp type)
+  (if (stringp type)
       (typespec-new this 'inline-array (make-a-typespec this type))
       (typespec-new this 'inline-array type)))
 
@@ -484,7 +489,7 @@
 
 (defun lookup-type (this ts-or-name)
   ;;(-> type-system? (or/c typespec? symbolp) type?)
-  (if (symbolp ts-or-name)
+  (if (stringp ts-or-name)
       (lookup-type-by-name this ts-or-name)
       (lookup-type this (base-type ts-or-name))))
 
@@ -494,7 +499,7 @@
 
 (defun lookup-type-allow-partial-def (this ts-or-name)
   ;;(-> type-system? (or/c symbolp typespec?) type?)
-  (if (symbolp ts-or-name)
+  (if (stringp ts-or-name)
       (lookup-type-allow-partial-def-by-name this ts-or-name)
       (lookup-type-allow-partial-def this (base-type ts-or-name))))
 
@@ -591,7 +596,7 @@
 		       override-type)
   ;;(-> type-system? (or/c symbolp type?) symbolp boolean? typespec? boolean? method-info?)
 
-  (if (symbolp type-or-name)
+  (if (stringp type-or-name)
       (declare-method-for-type this (lookup-type this (make-a-typespec this type-or-name))
                                method-name no-virtual ts override-type)
       (declare-method-for-type this type-or-name  method-name no-virtual ts override-type)))
@@ -701,7 +706,7 @@
 (defun define-method (this type-or-name method-name ts)
   ;;(-> (or/c type? symbolp) symbolp typespec? method-info?)
 
-   (if (symbolp type-or-name)
+   (if (stringp type-or-name)
        (define-method-for-type this (lookup-type this (typespec-new type-or-name)) method-name ts)
        (define-method-for-type this type-or-name method-name ts)))
 
@@ -795,11 +800,11 @@
 (defun try-lookup-method (this type-or-name method-name-or-id)
   ;;(-> type-system? (or/c type? symbolp) (or/c symbolp integer?) (or/c nil method-info?))
   (cond
-    ((and (symbolp type-or-name) (symbolp method-name-or-id))
+    ((and (stringp type-or-name) (stringp method-name-or-id))
      (try-lookup-method-by-name this type-or-name method-name-or-id))
-    ((and (symbolp type-or-name) (integer? method-name-or-id))
+    ((and (stringp type-or-name) (integer? method-name-or-id))
      (try-lookup-method-by-id this type-or-name method-name-or-id))
-    ((and (gtype-p type-or-name) (symbolp method-name-or-id))
+    ((and (gtype-p type-or-name) (stringp method-name-or-id))
      (try-lookup-method-of-type this  type-or-name method-name-or-id))
     (else (error (format nil "Bad arguments\n [0] ~a\n [1] ~a\n" type-or-name method-name-or-id)))))
 
@@ -1149,20 +1154,20 @@
 (defun allow-inline (type)
   ;;(-> type? boolean?)
   (let ((name (gtype-name type)))
-    (and (!= name 'basic) (!= name 'structure))))
+    (and (!= name "basic") (!= name "structure"))))
 
 ;; Get the size of a field in a type. The array sizes should be consistent with
 ;; get-deref-info's stride.
 
-(defun get-size-in-type (this field)
+(defmethod get-size-in-type ((this type-system) (afield field))
   ;;(-> type-system? field? integer?)
-  (let* ((fld-typespec (field-type field))
+  (let* ((fld-typespec (field-type afield))
          (fld-type (lookup-type-allow-partial-def this fld-typespec)))
 
     ;; Helper: Get size of field in case if it is array
     (defun get-size-for-array ()
       (cond
-        ((field-is-inline field)
+        ((field-is-inline afield)
          (when (not (fully-defined-type-exists this fld-typespec))
            (error (format nil "Cannot use the forward-declared type ~a in an inline array.\n"
                           (to-str fld-type))))
@@ -1172,20 +1177,20 @@
                    "Attempted to use `~a` inline, this probably isn't what you wanted.\n"
                    fld-typespec)))
          (assert (is-reference? fld-type))
-         (* (field-array-size field)
+         (* (field-array-size afield)
             (align-n (get-size-in-memory fld-type)
                      (get-inl-array-stride-align fld-type))))
         (else
          (if (is-reference? fld-type)
-             (* (field-array-size field) POINTER-SIZE)
-             (* (field-array-size field)
+             (* (field-array-size afield) POINTER-SIZE)
+             (* (field-array-size afield)
                 (align-n (get-size-in-memory fld-type)
                        (get-in-memory-alignment fld-type)))))))
     ;; Helper: Get size for not arrays
     (defun get-size-for-not-array ()
       ;; not an array
       (cond
-        ((field-is-inline field)
+        ((field-is-inline afield)
          (when (not (fully-defined-type-exists this fld-typespec))
            (error (format nil "Cannot use the forward-declared type ~a inline.\n"
                           (to-str fld-type))))
@@ -1205,9 +1210,9 @@
                       (get-in-memory-alignment fld-type))))))
     ;;
     (cond
-      ((field-is-dynamic field)
+      ((field-is-dynamic afield)
        0) ;; for dynamic fields zero
-      ((field-is-array field)
+      ((field-is-array afield)
        (get-size-for-array))
       (else
        (get-size-for-not-array)))))

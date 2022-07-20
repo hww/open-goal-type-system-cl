@@ -1,4 +1,4 @@
-(in-package :type-system-test)
+(in-package :type-system/test)
 (use-package :test-lib)
 (use-package :type-system)
 
@@ -33,7 +33,7 @@
 			   (format nil "Entries are different:~%Number of entries 2 vs 3~%"))
     ))
 
-(defun basic-types-test ()
+(defun run-basic-types-test ()
   (value-type-test)
   (reference-type-test)
   (struct-type-test)
