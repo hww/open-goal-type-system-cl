@@ -1,5 +1,5 @@
 (uiop:define-package #:goal-lib
-  (:use #:cl #:cl-ppcre #:interpol) 
+  (:use #:cl #:cl-ppcre)
   (:import-from )
   (:export
    :ex/defconstant
@@ -518,9 +518,3 @@
   (:reexport :type-system/type)
   (:reexport :type-system/typespec)
   )
-
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (unless (named-readtables:find-readtable :cl-interpol)
-    (named-readtables:defreadtable :cl-interpol
-      (:merge :current)
-      (:dispatch-macro-char #\# #\? #'interpol::interpol-reader))))

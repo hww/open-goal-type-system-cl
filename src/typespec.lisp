@@ -1,5 +1,5 @@
 (in-package :type-system/typespec)
-(named-readtables:in-readtable :interpol-syntax)
+
 
 
 ;; ----------------------------------------------------------------------------

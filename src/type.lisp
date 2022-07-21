@@ -1,6 +1,6 @@
 (in-package :type-system/type)
 (use-package :type-system/interfaces)
-(named-readtables:in-readtable :interpol-syntax)
+
 ;; ----------------------------------------------------------------------------
 ;;
 ;; Valeriya P.

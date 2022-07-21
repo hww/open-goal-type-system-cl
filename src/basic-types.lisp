@@ -1,7 +1,7 @@
 (in-package :type-system/type)
 (use-package :type-system/interfaces)
 (use-package :type-system/typespec)
-(named-readtables:in-readtable :interpol-syntax)
+
 ;; ----------------------------------------------------------------------------
 ;;
 ;; Valeriya P.

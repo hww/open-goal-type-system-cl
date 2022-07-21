@@ -4,24 +4,24 @@
 
 (defun value-type-test ()
   (check-equal-downcase? 
-   (to-str (value-type-new 'foo 'bar nil 10 t)) 
+   (to-str (value-type-new "foo" "bar" nil 10 t))
    (format nil "[ValueType] bar~% parent: foo~% boxed: nil~% size: 10~% sext: T~%")))
 
 (defun reference-type-test ()
   (check-equal-downcase?
-   (to-str (reference-type-new 'foo 'bar nil 10))
+   (to-str (reference-type-new "foo" "bar" nil 10))
    (format nil "[ReferenceType] bar~% parent: foo~% boxed: nil~%")))
 
 (defun struct-type-test ()
   (check-equal-downcase?
-   (to-str (struct-type-new EMPTY-SYMBOL 'foo nil nil nil  10))
+   (to-str (struct-type-new "" "foo" nil nil nil  10))
    "[structtype] foo parent:  boxed: nil size: 0 pack: nil misalign: nil heap-base: 10 stack-singleton: nil fields: methods:"
 ))
 
 
 (defun bitfield-type-test ()
   (check-equal-downcase?
-   (to-str (bitfield-type-new 'foo 'bar 10 T))
+   (to-str (bitfield-type-new "foo" "bar" 10 T))
    (format nil "Parent type: foo~%Fields:~%Mem size: 10, load size: 10, signed T, align 10~%")))
 
 (defun enum-types-test ()

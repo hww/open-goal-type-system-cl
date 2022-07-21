@@ -6,7 +6,7 @@
   #+asdf-unicode :encoding #+asdf-unicode :utf-8
   :serial t
   :pathname "src/"
-  :depends-on (#:cl-interpol #:alexandria #:named-readtables)
+  :depends-on (#:alexandria #:named-readtables)
   :components ((:file "package")
                (:file "goal-lib" :depends-on ("package"))
                (:file "interfaces" :depends-on ("package" "goal-lib"))
@@ -24,7 +24,7 @@
   :license "LLGPL"
   :encoding :utf-8
   :serial t
-  :depends-on (#:type-system #:alexandria #:cl-interpol)
+  :depends-on (#:type-system #:alexandria)
   :pathname "tests/"
   :components ((:file "package")
                (:file "test-lib" :depends-on ("package"))

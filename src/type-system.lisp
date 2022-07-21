@@ -1,6 +1,4 @@
 (in-package :type-system)
-(named-readtables:in-readtable :interpol-syntax)
-(use-package :interpol)
 (use-package :type-system/interfaces)
 (use-package :type-system/typespec)
 (use-package :type-system/type)
@@ -89,13 +87,13 @@
 (defmethod inspect-all-type-information ((this type-system))
   ;;;(-> type-system? string?)
   (string-append
-   #?"\nALL TYPES ===================\n"
+   (format nil "~%ALL TYPES ===================~%")
    (string-join
     (hash-map
      (type-system-types this)
      (lambda (k v) (assert k) (to-str v)))
     #\newline)
-   #?"\nEND OF ALL TYPES ============\n"))
+   (format nil "~%END OF ALL TYPES ============~%"))
 
 ;; Clear types
 (defmethod types-clear ((this type-system))
@@ -144,7 +142,7 @@
       (let ((method-count (get-next-method-id this type)))
         (when (!= method-count method-kv)
           (error
-           (format nil "Type ~a was defined with ~a methods but was forward declared with ~a\n"
+           (format nil "Type ~a was defined with ~a methods but was forward declared with ~a~%"
                    name  method-count method-kv)))))
     (let ((kv (types-find this name)))
       (cond
@@ -154,14 +152,14 @@
            ((compare kv type)
             ;; exists and we are trying to change it!
             (when (type-system-allow-redefinition this)
-              (log-warning "[TypeSystem] Type ~a was originally\n~a\nand is redefined as\n~a\n"
+              (log-warning "[TypeSystem] Type ~a was originally~%~a~%and is redefined as~%~a~%"
                            (gtype-name kv) (to-str kv) (to-str type))
               ;; extra dangerous we have allowed type redefinition!
               ;; keep the unique-ptr around just in case somebody references this old type pointer.
               (old-types-push this kv)
               ;; update the type
               (types-set! this name type)))
-           (else (error (format nil "Inconsistent type definition. Type ~a was originally\n~a\nand is redefined as\n~a\nDiff:\n~a\n"
+           (else (error (format nil "Inconsistent type definition. Type ~a was originally~%~a~%and is redefined as~%~a~%Diff:~%~a~%"
                                 (gtype-name kv) (to-str kv) (to-str type) (diff kv type))))))
         (else
          ;; newly defined!
@@ -171,13 +169,13 @@
                     (!= name "_type_")
                     (!= name "_varargs_"))
            (when (forward-declared-types-find this (gtype-get-parent type))
-             (error (format nil "Cannot create new type `~a`. The parent type `~a` is not fully defined.\n"
+             (error (format nil "Cannot create new type `~a`. The parent type `~a` is not fully defined.~%"
                             (gtype-name type) (gtype-get-parent type))))
 
            (unless (types-find this (gtype-get-parent type))
              (error (format
                      nil
-                     "Cannot create new type `~a`. The parent type `~a` is not defined.\n"
+                     "Cannot create new type `~a`. The parent type `~a` is not defined.~%"
                      (gtype-name type) (gtype-get-parent type)))))
 
          (types-set! this name type)
@@ -185,7 +183,7 @@
            (when fwd-it
              ;; need to check parent is correct.
              (when (not (tc this (typespec-new fwd-it) (typespec-new name)))
-               (error (format nil "Type ~a was original declared as a child of ~a but is not.\n" name fwd-it)))))
+               (error (format nil "Type ~a was original declared as a child of ~a but is not.~%" name fwd-it)))))
          (hash-remove! (type-system-forward-declared-types this) name))))
     (let ((res (types-find this name)))
       (if res
@@ -203,7 +201,7 @@
 
 (defun forward-declare-type-as-type (this name)
   ;;(-> type-system? symbol? void)
-  (log-debug "forward-declare: ~a\n" name)
+  (log-debug "forward-declare: ~a~%" name)
   (unless (types-find this name)
     ;; only if not defined
     (let ((it (forward-declared-types-find this name )))
@@ -218,7 +216,7 @@
 
 (defun forward-declare-type-as (this new-type parent-type)
   ;;(-> type-system? symbol? symbol? void)
-  (log-debug "forward-declare: ~a as: ~a\n" new-type parent-type)
+  (log-debug "forward-declare: ~a as: ~a~%" new-type parent-type)
   (let ((type-it (types-find this new-type)))
     (if type-it
         ;; the type is already defined
@@ -619,7 +617,7 @@
                                 &optional
                                   (id -1))
   ;;(->* (type-system? type? symbolp boolean? typespec? boolean?) (integer?) method-info?)
-  ;; (printf "declare-method type: ~a name: ~a no-virt: ~a typespec: ~a override: ~a :id ~a\n"
+  ;; (printf "declare-method type: ~a name: ~a no-virt: ~a typespec: ~a override: ~a :id ~a~%"
   ;;        (to-str type)
   ;;        method-name
   ;;        no-virtual
@@ -668,7 +666,7 @@
                  (error (format
                          (string-append
                           "The method ~a of type ~a was originally declared as ~a, but has been "
-                          "redeclared as ~a. Originally declared in ~a\n")
+                          "redeclared as ~a. Originally declared in ~a~%")
                          method-name
                          (gtype-name type)
                          (to-str exist-type)
@@ -735,13 +733,13 @@
             (when (not (typespec-is-compatible-child-method mtype ts (gtype-name type)))
               (error (format
                       nil
-                      "The method ~a of type ~a was originally defined as ~a but has been redefined as ~a\n"
+                      "The method ~a of type ~a was originally defined as ~a but has been redefined as ~a~%"
                       method-name (gtype-name type)
                       (to-str mtype)
                       (to-str ts)))))
           existing-info)
          (else
-          (error (format nil "Cannot add method ~a to type ~a because it was not declared.\n"
+          (error (format nil "Cannot add method ~a to type ~a because it was not declared.~%"
                          method-name (gtype-name type)))))))))
 
 ;; Special case to add a new method, as new methods can specialize the
@@ -761,7 +759,7 @@
                    nil
                    (string-append
                     "Cannot add new method. Type does not match declaration. The new method of ~a was "
-                    "originally defined as ~a, but has been redefined as ~a\n")
+                    "originally defined as ~a, but has been redefined as ~a~%")
                    (gtype-name type)  (to-str existing) (to-str ts))))
          existing))
       (else
@@ -792,7 +790,7 @@
                   (setf iter-type (lookup-type this (gtype-get-parent iter-type)))
                   (error (format
                           nil
-                          "The method ~a of type ~a could not be found.\n"
+                          "The method ~a of type ~a could not be found.~%"
                           method-name type-name)))))))))))
 
 ;; Try lookup method by the type and method name will not make an exeption
@@ -806,7 +804,7 @@
      (try-lookup-method-by-id this type-or-name method-name-or-id))
     ((and (gtype-p type-or-name) (stringp method-name-or-id))
      (try-lookup-method-of-type this  type-or-name method-name-or-id))
-    (else (error (format nil "Bad arguments\n [0] ~a\n [1] ~a\n" type-or-name method-name-or-id)))))
+    (else (error (format nil "Bad arguments~% [0] ~a~% [1] ~a~%" type-or-name method-name-or-id)))))
 
 ;; Lookup by name of type and method
 
@@ -916,7 +914,7 @@
           (else
            (if (gtype-has-parent? iter-type)
                (setf iter-type (lookup-type this (gtype-get-parent iter-type)))
-               (error "The new method of type ~a could not be found.\n"
+               (error "The new method of type ~a could not be found.~%"
                       type-name))))))))
 
 ;; Makes sure a method exists at the given ID for the given type possibly
@@ -926,7 +924,7 @@
   ;;(-> type-system? symbolp symbolp integer? void?)
   (let ((info (lookup-method this type-name method-name)))
     (unless (== (method-info-id info) id)
-      (error (format nil "Method ID assertion failed: type ~a, method ~a id was ~a, expected ~a\n"
+      (error (format nil "Method ID assertion failed: type ~a, method ~a id was ~a, expected ~a~%"
                      type-name method-name (method-info-id info) id)))))
 
 ;; Get the next free method ID of a type.
@@ -1041,7 +1039,7 @@
   ;;(-> symbolp symbolp integer? void?)
   (let ((field (lookup-field type-name this field-name)))
     (unless (== (field-offset field) offset)
-      (error (format nil "assert-field-offset(~a, ~a, ~a) failed - got ~a\n"
+      (error (format nil "assert-field-offset(~a, ~a, ~a) failed - got ~a~%"
                      type-name field-name offset (field-offset field))))))
 
 
@@ -1062,9 +1060,9 @@
   ;;(->* (type-system? struct-type? symbolp typespec?)
   ;;     (boolean? boolean? integer? integer? boolean? real?)
   ;;     integer?)
-  ;;(printf "Add field ~a to type ~a\n" fld-name (type-name type))
+  ;;(printf "Add field ~a to type ~a~%" fld-name (type-name type))
   (when (struct-type-lookup-field type fld-name)
-    (error (format nil "Type `~a` already has a field named `~a`\n" (gtype-name type) fld-name)))
+    (error (format nil "Type `~a` already has a field named `~a`~%" (gtype-name type) fld-name)))
 
   ;; first, construct the field
   (let ((field (field-new fld-name fld-type 0)))
@@ -1088,7 +1086,7 @@
          ;; verify the offset if it was alligned
          (let ((aligned-offset (align-n offset field-alignment)))
            (when (!= offset aligned-offset)
-             (error (format nil "Tried to place field `~a` at `~a`, but it is not aligned correctly\n"
+             (error (format nil "Tried to place field `~a` at `~a`, but it is not aligned correctly~%"
                             fld-name offset))))))
       ;;
       (setf (field-offset field) offset)
@@ -1116,7 +1114,7 @@
   (let* ((atype (get-type-of-type this #'struct-type-p type-name))
          (field (lookup-field this atype field-name)))
     (unless field
-      (error (format nil "Type ~a has no field named ~a\n"
+      (error (format nil "Type ~a has no field named ~a~%"
                      type-name field-name)))
     field))
 
@@ -1169,12 +1167,12 @@
       (cond
         ((field-is-inline afield)
          (when (not (fully-defined-type-exists this fld-typespec))
-           (error (format nil "Cannot use the forward-declared type ~a in an inline array.\n"
+           (error (format nil "Cannot use the forward-declared type ~a in an inline array.~%"
                           (to-str fld-type))))
          (when (not (allow-inline fld-type))
            (error (format
                    nil
-                   "Attempted to use `~a` inline, this probably isn't what you wanted.\n"
+                   "Attempted to use `~a` inline, this probably isn't what you wanted.~%"
                    fld-typespec)))
          (assert (is-reference? fld-type))
          (* (field-array-size afield)
@@ -1192,12 +1190,12 @@
       (cond
         ((field-is-inline afield)
          (when (not (fully-defined-type-exists this fld-typespec))
-           (error (format nil "Cannot use the forward-declared type ~a inline.\n"
+           (error (format nil "Cannot use the forward-declared type ~a inline.~%"
                           (to-str fld-type))))
          (when (not (allow-inline fld-type))
            (error (format
                    nil
-                   "Attempted to use `~a` inline, this probably isn't what you wanted. Type may not be defined fully.\n"
+                   "Attempted to use `~a` inline, this probably isn't what you wanted. Type may not be defined fully.~%"
                    (gtype-name fld-type))))
          (assert (is-reference? fld-type))
          ;; return align(field-type->get-size-in-memory(), field-type->get-in-memory-alignment());
@@ -1505,7 +1503,7 @@
   (let* ((type (get-type-of-type this #'bitfield-type-p type-name))
          (fld (struct-type-lookup-field type field-name)))
     ;; (unless fld
-    ;;   (error (format nil "Type ~a has no bitfield named ~a\n" type-name field-name)))
+    ;;   (error (format nil "Type ~a has no bitfield named ~a~%" type-name field-name)))
     (let* ((bf-type (sbitfield-type fld))
            (bf-base (lookup-type this (sbitfield-type fld))))
 
@@ -1529,13 +1527,13 @@
     (when (> field-size load-size)
       (error (format
               nil
-              "Type ~a's bitfield ~a's set size is ~a which is larger than the actual type: ~a\n"
+              "Type ~a's bitfield ~a's set size is ~a which is larger than the actual type: ~a~%"
               (gtype-name type) field-name field-size load-size)))
 
     (when (> (+ field-size offset) (* (get-load-size type) 8))
       (error (format
               nil
-              "Type ~a's bitfield ~a will run off the end of the type (ends at ~a bits type is ~a bits)\n"
+              "Type ~a's bitfield ~a will run off the end of the type (ends at ~a bits type is ~a bits)~%"
               (gtype-name type) field-name (+ field-size offset) (* (get-load-size type) 8))))
 
     ;; 128-bit bitfields have the limitation that fields cannot cross the 64-bit boundary.
@@ -1603,25 +1601,25 @@
 
     (when (struct-type-p type)
       (when (struct-type-pack type)
-        (result-append "  :pack-me\n"))
+        (result-append (format nil "  :pack-me~%")))
       (when (struct-type-allow-misalign type)
-        (result-append "  :allow-misaligned\n"))
+        (result-append (format nil "  :allow-misaligned~%")))
       (when (struct-type-always-stack-singleton type)
-        (result-append "  :always-stack-singleton\n")))
+        (result-append (format nil "  :always-stack-singleton~%"))))
 
     (when (!= 0 (gtype-heap-base type))
-      (result-append (format nil "  :heap-base #x(~x)\n" (gtype-heap-base type))))
+      (result-append (format nil "  :heap-base #x(~x)~%" (gtype-heap-base type))))
 
-    (result-append (format nil "  :method-count-assert ~a\n" (get-next-method-id this type)))
-    (result-append (format nil "  :size-assert         #x(~x)\n" (get-size-in-memory type)))
+    (result-append (format nil "  :method-count-assert ~a~%" (get-next-method-id this type)))
+    (result-append (format nil "  :size-assert         #x(~x)~%" (get-size-in-memory type)))
 
     (setf (type-flags-heap-base flags) (gtype-heap-base type))
     (setf (type-flags-size flags)      (get-size-in-memory type))
     (setf (type-flags-methods flags)    method-count)
 
-    (result-append (format nil "  :flag-assert         #x~x\n  " (type-flags-flag flags)))
+    (result-append (format nil "  :flag-assert         #x~x~%  " (type-flags-flag flags)))
     (unless (gtype-generate-inspect type)
-      (result-append ":no-to-str\n  "))
+      (result-append (format nil ":no-to-str~%  ")))
 
     ;; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     ;; Check and print the NEW method
@@ -1639,7 +1637,7 @@
           (let ((behavior (typespec-try-get-tag new-info-type "behavior")))
             (when behavior
               (string-append! methods-string (format nil ":behavior ~a " behavior)))
-            (string-append! methods-string "0)\n    ")))))
+            (string-append! methods-string (format nil "0)~%    "))))))
     ;; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     ;; Print all other methods
     (loop for info across (gtype-methods type) do
@@ -1665,12 +1663,12 @@
         (when (== (base-type info-type) "state")
           (string-append! methods-string ":state "))
 
-        (string-append! methods-string (format nil "~a)\n    " (method-info-id info)))))
+        (string-append! methods-string (format nil "~a)~%    " (method-info-id info)))))
     ;; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     (unless (== "" methods-string)
-      (result-append "(:methods\n    ")
+      (result-append "(:methods~%    ")
       (result-append methods-string)
-      (result-append ")\n  "))
+      (result-append ")~%  "))
     ;; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     ;; Make states string
     (loop for name being the hash-keys in (gtype-states type) using (hash-value info)
@@ -1683,16 +1681,16 @@
                     (string-append! states-string " ")
                     (string-append! states-string (to-str (typespec-args-ref info i))))
 
-                  (string-append! states-string ")\n"))
+                  (string-append! states-string ")~%"))
                  (else
-                  (string-append! states-string (format nil "    ~a\n" name))))))
+                  (string-append! states-string (format nil "    ~a~%" name))))))
     ;; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     (unless (== "" states-string)
-      (result-append "(:states\n")
+      (result-append "(:states~%")
       (result-append states-string)
-      (result-append "    )\n  "))
+      (result-append "    )~%  "))
 
-    (result-append ")\n")
+    (result-append ")~%")
     result))
 
 (defun generate-deftype-for-structure (this st)
@@ -1703,7 +1701,7 @@
       (set! result (string-append result str)))
     ;; - - - - - - - -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
     (string-append! result
-                    (format nil "(deftype ~a (~a)\n  ("
+                    (format nil "(deftype ~a (~a)~%  ("
                             (gtype-name st) (gtype-parent st)))
     (let ((longest-field-name 0)
           (longest-type-name 0)
@@ -1778,9 +1776,9 @@
                           (result-append ":offset "))))
 
                    (result-append (format nil "~3a" (field-offset field)))
-                   (result-append #?")\n   "))))
+                   (result-append (format nil ")~%   ")))))
 
-      (result-append #?")\n")
+      (result-append (format nil ")~%"))
       (result-append (generate-deftype-footer this st))
 
       result)))
@@ -1814,8 +1812,8 @@
                (result-append (format nil ":offset (~3a) :size (~3a)"
                                       (sbitfield-offset field)
                                       (sbitfield-size field)))
-               (result-append #?")\n   ")))
+               (result-append (format ")~%   "))))
 
-    (result-append #?")\n")
+    (result-append (format nil ")~%"))
     (result-append (generate-deftype-footer this atype))
     result))
