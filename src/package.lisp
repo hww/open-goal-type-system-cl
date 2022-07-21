@@ -5,12 +5,20 @@
    :ex/defconstant
    :ex/defun
    :ex/defmacro
-   :else
+   ;;
    :null?
    :integer?
    :float?
+   :symbol?
+   :string?
+   :list?
+   :boolean?
+   :number?
+   ;;
    :true
    :false
+   :else
+   ;;
    :equal?
    :notequal?
    :==
@@ -20,6 +28,7 @@
    :string-append
    :string-append!
    :string-join
+   :string-ref
    :list->string
    :string-to-one-line
    :append!
@@ -45,6 +54,7 @@
    :hash-clear!
    :hash-remove!
    :make-hash
+   :hash-has-key?
    ;;
    :set!
    :inc
@@ -90,6 +100,13 @@
    :struct-to-list
    :list-to-struct
    :list-to-struct!
+   ;;
+   :move-if-not-zero
+   :set-on-less-than
+   :integer-fits?
+   ;;
+   :log-error
+   :log-warning
    )
   )
 
@@ -457,6 +474,7 @@
    :struct-type-override-size-in-memory
    :struct-type-to-str
    :make-struct-type
+   :struct-type-lookup-field
    ;;
    :value-type
    :value-type-size
@@ -495,6 +513,13 @@
   (:import-from
    )
   (:export
+   ;; defenum
+   :parse-defenum
+   ;; deftype
+   :parse-typespec
+   :parse-deftype
+   :parse-declare-method
+   ;; type-system
    :type-system
    :type-system-types
    :type-system-forward-declared-types

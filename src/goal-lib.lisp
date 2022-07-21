@@ -5,9 +5,15 @@
 ;; ==============================================================================;;;;
 
 (defconstant else t)
-(defun null? (val) (null val))
-(defun integer? (val) (integerp val))
-(defun float? (val) (floatp val))
+(defmacro null? (val) `(null ,val))
+(defmacro integer? (val) `(integerp ,val))
+(defmacro float? (val) `(floatp ,val))
+(defmacro symbol? (val) `(symbolp ,val))
+(defmacro string? (val) `(stringp ,val))
+(defmacro boolean? (obj) `(typep ,obj 'boolean))
+(defmacro number? (obj) `(numberp ,obj))
+(defmacro list? (obj) `(listp ,obj))
+
 
 (defconstant true t)
 (defconstant false nil)
@@ -23,6 +29,13 @@
 
 (defmacro != (&rest args)
   `(not (equalp ,@args)))
+
+;; ==============================================================================;;;
+;; Log
+;; ==============================================================================;;;
+
+(defmacro log-warning (fmt &rest args) `(format t ,fmt ,@args))
+(defmacro log-debug (fmt &rest args) `(format t ,fmt ,@args))
 
 ;; ==============================================================================;;;
 ;;
@@ -49,7 +62,6 @@
 ;; ==============================================================================;;;;
 ;; STRING TOOLS
 ;; ==============================================================================;;;;
-
 
 (defun stringify (v)
   (cond
@@ -86,6 +98,9 @@ defaults to CHAR= (for case-sensitive comparison)."
 
 (defun string-to-one-line (s)
   (cl-ppcre:regex-replace-all "(\\n|\\s*$)" s ""))
+
+(defmacro string-ref (str idx)
+  `(char ,str ,idx))
 
 ;;;;;;;;;;;;;;;;;;;
 ;; Math Macros
@@ -369,6 +384,8 @@ defaults to CHAR= (for case-sensitive comparison)."
   `(REMHASH ,key ,hash))
 (defun make-hash (&key (capacity 8) (test 'equal))
   (make-hash-table :size capacity :test test))
+(defmacro hash-has-key? (hash key)
+  `(nth-value 1 (gethash ,key ,hash)))
 
 ;; ==============================================================================
 ;; The structure helpers
@@ -540,3 +557,51 @@ defaults to CHAR= (for case-sensitive comparison)."
 ;(defvar bazz (make-baz-t :x 4 :y 5 :z 6))
 
 ;(print (copy-parent-struct bazz baz :x 100))
+
+
+;; ==============================================================================
+;; Conditional
+;; ==============================================================================
+
+
+(defmacro move-if-not-zero (result value check original)
+    `(if (!= ,check 0)
+         (setf ,result ,value)
+         (setf ,result ,original)))
+
+;; "dest = src1 < src2 ? 1 : 0 -- Compare as Signed Integers
+(defmacro set-on-less-than (dest src1 src2)
+    `(if (< ,src1 ,src2)
+         (setf ,dest 1)
+         (setf ,dest 0)))
+
+(defconstant INT8-MAX   128)
+(defconstant INT8-MIN  -127)
+(defconstant INT16-MAX  32767)
+(defconstant INT16-MIN  -32768)
+(defconstant INT32-MAX  2147483647)
+(defconstant INT32-MIN -2147483648)
+
+(defconstant UINT8-MAX  255)
+(defconstant UINT16-MAX 65535)
+(defconstant UINT32-MAX 4294967295)
+
+;; helper
+(defun integer-fits? (in size is-signed)
+    (cond
+      ((== 1 size)
+       (if is-signed
+           (and (>= in INT8-MIN) (<= in INT8-MAX))
+           (and (>= in 0) (<= in UINT8-MAX))))
+      ((== 2 size)
+       (if is-signed
+           (and (>= in INT16-MIN) (<= in INT16-MAX))
+           (and (>= in 0) (<= in UINT16-MAX))))
+      ((== 4 size)
+       (if is-signed
+           (and (>= in INT32-MIN) (<= in INT32-MAX))
+           (and (>= in 0) (<= in UINT32-MAX))))
+      ((== 8 size)
+       true)
+      (else
+       (assert false))))

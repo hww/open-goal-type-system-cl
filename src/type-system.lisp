@@ -128,8 +128,6 @@
 ;; ==============================================================================
 ;; How to define a type
 ;; ==============================================================================
-(defmacro log-warning (fmt &rest args) `(format t ,fmt ,@args))
-(defmacro log-debug (fmt &rest args) `(format t ,fmt ,@args))
 
 ;; Add a new type. If the type exists, and this new type is different,
 ;; it is an error if throw_on_redefine is set. The type should be

@@ -15,6 +15,8 @@
                (:file "basic-types" :depends-on ("package" "type"))
                (:file "type-system" :depends-on ("package" "basic-types"))
                (:file "builting-types" :depends-on ("package" "type-system" "basic-types" "type"))
+               (:file "defenum" :depends-on ("package" "type-system" "basic-types" "type"))
+               (:file "deftype" :depends-on ("package" "type-system" "basic-types" "type"))
                ))
 
 

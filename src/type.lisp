@@ -72,27 +72,6 @@
 
 
 ;; ----------------------------------------------------------------------------
-;; Utility struct used by the parser
-;; ----------------------------------------------------------------------------
-
-;; Flags for any definition
-;; All fields are integers
-(defstruct type-flags
-  (size      0 :type integer)
-  (heap-base 0 :type integer)
-  (methods   0 :type integer)
-  (pad       0 :type integer))
-
-(defun type-flags-new () (make-type-flags))
-
-(defun type-flags-flag (flags)
-  (my/with-slots nil (type-flags size heap-base methods pad) flags
-    (+ (logand size      #xFFFF)
-       (ash (logand heap-base #xFFFF) 16)
-       (ash (logand methods   #xFFFF) 32)
-       (ash (logand pad       #xFFFF) 48))))
-
-;; ----------------------------------------------------------------------------
 ;; The type
 ;; ----------------------------------------------------------------------------
 
