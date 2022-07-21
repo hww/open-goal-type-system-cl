@@ -225,6 +225,6 @@
 
 ;; Type spec text--------------------------------------------------------
 
-(let ((this (type-system-new)))
-  (add-builtin-types this)
-  (print (inspect-all-type-information this)))
+;(let ((this (type-system-new)))
+;  (add-builtin-types this)
+;  (print (inspect-all-type-information this)))
