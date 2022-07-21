@@ -6,7 +6,7 @@
   #+asdf-unicode :encoding #+asdf-unicode :utf-8
   :serial t
   :pathname "src/"
-  :depends-on (#:alexandria #:named-readtables)
+  :depends-on (#:alexandria #:named-readtables #:cl-ppcre)
   :components ((:file "package")
                (:file "goal-lib" :depends-on ("package"))
                (:file "interfaces" :depends-on ("package" "goal-lib"))

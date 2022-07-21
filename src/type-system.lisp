@@ -93,7 +93,7 @@
      (type-system-types this)
      (lambda (k v) (assert k) (to-str v)))
     #\newline)
-   (format nil "~%END OF ALL TYPES ============~%"))
+   (format nil "~%END OF ALL TYPES ============~%")))
 
 ;; Clear types
 (defmethod types-clear ((this type-system))
@@ -1812,7 +1812,7 @@
                (result-append (format nil ":offset (~3a) :size (~3a)"
                                       (sbitfield-offset field)
                                       (sbitfield-size field)))
-               (result-append (format ")~%   "))))
+               (result-append (format nil ")~%   "))))
 
     (result-append (format nil ")~%"))
     (result-append (generate-deftype-footer this atype))
