@@ -339,7 +339,7 @@
    :type integer)                    ; int? = 0;
   )
 
-(declaim (ftype (function (symbol symbol boolean boolean boolean integer) struct-type) struct-type-new))
+(declaim (ftype (function (string string boolean boolean boolean integer) struct-type) struct-type-new))
 (defun struct-type-new (parent name boxed dynamic pack heap-base)
   "Constructor"
   (let* ((base (reference-type-new parent name boxed heap-base))

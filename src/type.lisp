@@ -178,15 +178,15 @@
 ;; don't have meaningful parents.
 
 (defun gtype-has-parent? (this)
-  (and (!= (gtype-name this) 'object)
-       (!= (gtype-parent this) EMPTY-SYMBOL)))
+  (and (!= (gtype-name this) "object")
+       (!= (gtype-parent this) "")))
 
 ;; Returns the parent of false
 
 (defun gtype-get-parent (this)
-  (if (!= (gtype-name this) 'object)
+  (if (!= (gtype-name this) "object")
       (gtype-parent this)
-      'none))
+      "none"))
 
 ;; Get a method that is defined specifically for this type. Returns if it was
 ;; found or not.
@@ -238,7 +238,7 @@
 ;; function is confusing - this is specific to the method named NEW.
 
 (defun gtype-add-new-method (this info)
-  (assert (== (method-info-name info) 'new))
+  (assert (== (method-info-name info) "new"))
   (setf (gtype-new-method-info-defined this) t)
   (setf (gtype-new-method-info this) info)
   info)

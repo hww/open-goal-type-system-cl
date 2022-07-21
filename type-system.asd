@@ -14,6 +14,7 @@
                (:file "type" :depends-on ("package" "typespec"))
                (:file "basic-types" :depends-on ("package" "type"))
                (:file "type-system" :depends-on ("package" "basic-types"))
+               (:file "builting-types" :depends-on ("package" "type-system" "basic-types" "type"))
                ))
 
 

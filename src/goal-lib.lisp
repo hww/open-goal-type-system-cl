@@ -360,7 +360,9 @@ defaults to CHAR= (for case-sensitive comparison)."
 (defmacro hash-count (hash)
   `(hash-table-count ,hash))
 (defmacro hash-map (hash func)
-  `(maphash #',func ,hash))
+  `(loop for hash-map-value being the hash-values of ,hash
+           using (hash-key hash-map-key)
+         collect (,func hash-map-key hash-map-value)))
 (defmacro hash-clear! (hash)
   `(clrhash ,hash))
 (defmacro hash-remove! (hash key)

@@ -93,7 +93,7 @@
    (string-join
     (hash-map
      (type-system-types this)
-     (lambda (k v) #?"{k} {(to-str v)}"))
+     (lambda (k v) (assert k) (to-str v)))
     #\newline)
    #?"\nEND OF ALL TYPES ============\n"))
 
@@ -189,8 +189,8 @@
          (hash-remove! (type-system-forward-declared-types this) name))))
     (let ((res (types-find this name)))
       (if res
-          (log-debug  "Defined         ~a\n" (to-str res))
-          (log-warning "Was not defined ~a\n" name))
+          (log-debug  "Defined         ~a~%" (to-str res))
+          (log-warning "Was not defined ~a~%" name))
       res)))
 
 ;; ==============================================================================
@@ -355,11 +355,11 @@
     (setf (deref-info-reg info) REG-CLASS-GPR-64)
     (setf (deref-info-mem-deref info) true)
 
-    (when (tc this (typespec-new 'float) ts)
+    (when (tc this (typespec-new "float") ts)
       (setf (deref-info-reg info) REG-CLASS-FLOAT))
 
     (cond
-      ((== (base-type ts) 'inline-array)
+      ((== (base-type ts) "inline-array")
        (let* ((result-type (lookup-type this (typespec-get-single-arg ts))))
          (when (or (not (struct-type-p result-type))
                    (struct-type-dynamic result-type))
@@ -380,7 +380,7 @@
                                              (get-inl-array-stride-align result-type)))
              ;; else - can't have an inline array of value types!
              (assert false))))
-      ((== (base-type ts) 'pointer)
+      ((== (base-type ts) "pointer")
        (setf (deref-info-can-deref info) true)
        (setf (deref-info-result-type info) (typespec-get-single-arg ts))
        (let ((result-type (lookup-type-allow-partial-def this (deref-info-result-type info))))
@@ -433,15 +433,15 @@
 
 (defun make-array-typespec (element-type)
   ;;(-> typespec? typespec?)
-  (typespec-new 'array (list element-type)))
+  (typespec-new "array" (list element-type)))
 
 ;; Create a typespec for a function.  If the function doesn't return
 ;; anything use "none" as the return type.
 
 (defun make-function-typespec (this arg-types return-type)
   ;;(-> type-system? (listof symbol?) symbol? typespec?)
-  (let ((ts (make-a-typespec this 'function)))
-    (loop for it across arg-types do
+  (let ((ts (make-a-typespec this "function")))
+    (loop for it in arg-types do
          (typespec-args-add ts (make-a-typespec this it)))
     (typespec-args-add ts (make-a-typespec this return-type))
     ts))
@@ -451,16 +451,16 @@
 (defun make-pointer-typespec (this type-or-name)
   ;;(-> type-system? (or/c symbol? typespec?) typespec?)
   (if (stringp type-or-name)
-      (typespec-new this 'pointer (make-a-typespec this type-or-name))
-      (typespec-new this 'pointer type-or-name)))
+      (typespec-new this "pointer" (make-a-typespec this type-or-name))
+      (typespec-new this "pointer" type-or-name)))
 
 ;; Create a TypeSpec for an inline-array of type
 
 (defun make-inline-array-typespec (this type)
   ;;(-> type-system? (or/c symbolp typespec?) typespec?)
   (if (stringp type)
-      (typespec-new this 'inline-array (make-a-typespec this type))
-      (typespec-new this 'inline-array type)))
+      (typespec-new this "inline-array" (make-a-typespec this type))
+      (typespec-new this "inline-array" type)))
 
 ;; ==============================================================================
 ;; Lookup types
@@ -574,7 +574,7 @@
       (else
 
        (let ((partial-def (lookup-type-allow-partial-def this ts)))
-         (when (not (tc this (typespec-new 'structure) ts))
+         (when (not (tc this (typespec-new "structure") ts))
            (error
             (format nil
              "Cannot perform a load or store from partially defined type ~a"
@@ -629,7 +629,7 @@
 
   (cond
     ;; new methods
-    ((== method-name 'new)
+    ((== method-name "new")
      (when override-type
        (error "Cannot use :replace option with a new method."))
      (add-new-method this type ts))
@@ -723,7 +723,7 @@
 (defun define-method-for-type (this type method-name ts)
   ;;(-> type-system? type? symbolp typespec? method-info?)
   (cond
-    ((== method-name 'new)
+    ((== method-name "new")
      (add-new-method this type ts))
     (else
      ;; look up the method
@@ -777,7 +777,7 @@
 (defun lookup-method (type-name this method-name)
   ;;(-> symbolp symbolp method-info?)
   (cond
-    ((== method-name 'new)
+    ((== method-name "new")
      (lookup-new-method this type-name))
     (else
 
@@ -820,7 +820,7 @@
        ;; try to look up a forward declared type.
        (let ((fwd-dec-type (lookup-type-allow-partial-def this type-name)))
          (if (tc this
-                 (typespec-new 'basic)
+                 (typespec-new "basic")
                  (typespec-new fwd-dec-type))
              ;; only allow this for basics. It technically should be safe for structures as well.
              (try-lookup-method this fwd-dec-type method-name)
@@ -860,7 +860,7 @@
   ;;(-> type-system? type? symbolp (or/c nil method-info?))
   (defun type-get-any-method (type name)
     (cond
-      ((== name 'new)
+      ((== name "new")
        (gtype-get-my-new-method type))
       (else
        (gtype-get-my-method type method-name))))
@@ -1254,21 +1254,21 @@
   (progn
     ;; the unit types aren't picky.
     (cond
-      ((== expected 'meters)
-       (set! expected 'float))
-      ((== expected 'seconds)
-       (set! expected 'time-frame))
-      ((== expected 'degrees)
-       (set!  expected 'float)))
-    (when (== actual 'seconds)
-      (set! actual 'time-frame))
+      ((== expected "meters")
+       (set! expected "float"))
+      ((== expected "seconds")
+       (set! expected "time-frame"))
+      ((== expected "degrees")
+       (set!  expected "float")))
+    (when (== actual "seconds")
+      (set! actual "time-frame"))
 
     ;; the decompiler prefers no aliasing so it can detect casts properly
     (when allow_alias
-      (when (== expected 'time-frame)
-        (set! expected 'int))
-      (when (== actual 'time-frame)
-        (set! actual 'int)))
+      (when (== expected "time-frame")
+        (set! expected "int"))
+      (when (== actual "time-frame")
+        (set! actual "int")))
 
     ;; just to make sure it exists. will produce an errir if will not found
     (lookup-type-allow-partial-def this expected);
@@ -1327,7 +1327,7 @@
       ;; match all parent tags
     (loop for tag in (typespec-tags expect)
           do
-             (if (== (type-tag-name tag) :behavior)
+             (if (== (type-tag-name tag) "behavior")
                  ;; then
                  (let ((got (typespec-try-get-tag actual (type-tag-name tag))))
                    (if (not got)
@@ -1377,17 +1377,12 @@
 
 ;; Get a path from type to object.
 
-(defun get-path-up-tree (this name)
+(defmethod get-path-up-tree ((this type-system) (name string))
   ;;(-> type-system? symbolp (listof symbolp))
-  (if (== name 'object)
-      (list 'object)
-      (cons name
-            (let ((type (lookup-type-allow-partial-def this name)))
-              (if (gtype-has-parent? type)
-                  ;; then
-                  (get-path-up-tree this (gtype-name type))
-                  ;; else
-                  nil)))))
+  (if (== name "object")
+      (list "object")
+      (let ((type (lookup-type-allow-partial-def this name)))
+        (cons name (get-path-up-tree this (gtype-name type))))))
 
 ;; ==============================================================================
 ;; Common accessor
@@ -1400,7 +1395,7 @@
   (cond
     ((== typea typeb)
      typea)
-    ((and (== 'none typea) (== 'none typeb))
+    ((and (== "none" typea) (== "none" typeb))
      'none)
     (else
      ;; the list of classes will be
@@ -1429,12 +1424,12 @@
   ;;(-> type-system? typespec? typespec? typespec?)
   (let ((result (typespec-new (lca-base this (base-type a) (base-type b)))))
     (cond
-      ((and (== result (typespec-new 'function))
+      ((and (== result (typespec-new "function"))
             (== (typespec-args-count a) 2)
             (== (typespec-args-count b) 2)
-            (or (== (typespec-args-ref a 0) (typespec-new '-varargs-))
-                (== (typespec-args-ref b 0) (typespec-new '-varargs-))))
-       (typespec-new 'function))
+            (or (== (typespec-args-ref a 0) (typespec-new "_varargs_"))
+                (== (typespec-args-ref b 0) (typespec-new "_varargs_"))))
+       (typespec-new "function"))
       (else
        (when (and (not (typespec-empty? a))
                   (not (typespec-empty? b))
@@ -1471,11 +1466,11 @@
   ;;(-> typespec? typespec?)
   (let ((bt (base-type in)))
     (when (== (typespec-args-count in) 0)
-      (when (or (== bt 'int8) (== bt 'int16) (== bt 'int32) (== bt 'int64) (== bt 'integer))
-        (typespec-new 'int))
+      (when (or (== bt "int8") (== bt "int16") (== bt "int32") (== bt "int64") (== bt "integer"))
+        (typespec-new "int"))
 
-      (when (or (== bt 'uint8) (== bt 'uint16) (== bt 'uint32) (== bt 'uint64) (== bt 'uinteger))
-        (typespec-new 'uint)))
+      (when (or (== bt "uint8") (== bt "uint16") (== bt "uint32") (== bt "uint64") (== bt "uinteger"))
+        (typespec-new "uint")))
     in))
 
 ;; ==============================================================================
@@ -1581,7 +1576,7 @@
        ;; for now we will prohibit calling a method on something that's defined only as a structure
        ;; because we don't know if it's actually a basic and should use virtual methods.
        (let ((fwd-dec-type (lookup-type-allow-partial-def this ts)))
-         (when (== (gtype-name fwd-dec-type) 'structure)
+         (when (== (gtype-name fwd-dec-type) "structure")
            (error (format
                    nil
                    "Type ~a was forward declared as structure and it is not safe to call a method."
@@ -1641,7 +1636,7 @@
                  (string-append! methods-string " ")))
           (string-append! methods-string (format nil ") ~a " (to-str (typespec-args-last new-info))))
 
-          (let ((behavior (typespec-try-get-tag new-info-type 'behavior)))
+          (let ((behavior (typespec-try-get-tag new-info-type "behavior")))
             (when behavior
               (string-append! methods-string (format nil ":behavior ~a " behavior)))
             (string-append! methods-string "0)\n    ")))))
@@ -1663,11 +1658,11 @@
         (when (method-info-override info)
           (string-append! methods-string ":replace "))
 
-        (let ((behavior (typespec-try-get-tag info 'behavior)))
+        (let ((behavior (typespec-try-get-tag info "behavior")))
           (when behavior
             (string-append! methods-string (format nil ":behavior ~a " behavior))))
 
-        (when (== (base-type info-type) 'state)
+        (when (== (base-type info-type) "state")
           (string-append! methods-string ":state "))
 
         (string-append! methods-string (format nil "~a)\n    " (method-info-id info)))))
