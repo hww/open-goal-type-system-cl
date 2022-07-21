@@ -227,4 +227,4 @@
 
 (let ((this (type-system-new)))
   (add-builtin-types this)
-  (print (inspect-all-type-information this))))
+  (print (inspect-all-type-information this)))
