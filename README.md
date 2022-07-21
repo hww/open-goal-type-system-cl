@@ -3,11 +3,13 @@
   <img width="500" height="100%" src="./docs/img/logo-text-colored-new-ts.png">
 </p>
 
-# The open GOAL type system for Common Lisp
+# The open GOAL type system for Common LISP
 
 ![CI](https://github.com/hww/open-goal-type-system-cl/workflows/CI/badge.svg?branch=main)
 
 The implementation of the GOAL type system with Common LISP. This explanation of the GOAL type system available [here](https://open-goal.github.io/docs/reference/type_system) Or you can see the source code of whole [Jack Project](https://github.com/open-goal/jak-project)
+
+There is the [Racket Version of this project](https://github.com/hww/open-goal-type-system-for-racket)
 
 ## This project motivations
 
