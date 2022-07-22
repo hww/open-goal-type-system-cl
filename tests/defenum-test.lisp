@@ -1,7 +1,7 @@
 (in-package :type-system/test)
 (use-package :type-system)
 
-(defun run-defunum-test ()
+(defun run-defenum-test ()
 
   (let ((tsys (type-system-new!)))
     ;; Simple test

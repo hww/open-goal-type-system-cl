@@ -12,6 +12,7 @@
    :integer?
    :float?
    :symbol?
+   :keyword?
    :string?
    :list?
    :boolean?
@@ -128,26 +129,26 @@
    )
   (:export
    ;;
-   :POINTER-SIZE
-   :STRUCTURE-ALIGNMENT
+   :+pointer-size+
+   :+structure-alignment+
    ;;
-   :EMPTY-SYMBOL
+   :+empty-symbol+
    ;;
-   :GOAL-NEW-METHOD
-   :GOAL-DEL-METHOD
-   :GOAL-PRINT-METHOD
-   :GOAL-INSPECT-METHOD
-   :GOAL-LENGTH-METHOD
-   :GOAL-ASIZE-METHOD
-   :GOAL-COPY-METHOD
-   :GOAL-RELOC-METHOD
-   :GOAL-MEMUSAGE-METHOD  
+   :+goal-new-method+
+   :+goal-del-method+
+   :+goal-print-method+
+   :+goal-inspect-method+
+   :+goal-length-method+
+   :+goal-asize-method+
+   :+goal-copy-method+
+   :+goal-reloc-method+
+   :+goal-memusage-method+
    ;;
-   :REG-CLASS-GPR-64
-   :REG-CLASS-FLOAT
-   :REG-CLASS-INT-128
-   :REG-CLASS-VECTOR_FLOAT
-   :REG-CLASS-INVALID
+   :+reg-class-gpr-64+
+   :+reg-class-float+
+   :+reg-class-int-128+
+   :+reg-class-vector_float+
+   :+reg-class-invalid+
    ;;
    :to-str
    :diff
@@ -529,6 +530,7 @@
    :parse-typespec
    :parse-deftype
    :parse-declare-method
+   :parse-declare-type
    ;; type-system
    :type-system
    :type-system-types

@@ -336,7 +336,7 @@
    (stride -1 :type integer)
    (load-size -1 :type integer)
    (result-type nil :type (or null typespec))
-   (reg REG-CLASS-INVALID :type integer)
+   (reg +reg-class-invalid+ :type integer)
    )
 
 
@@ -349,11 +349,11 @@
       (return-from get-deref-info info))
     ;; default to GPR
 
-    (setf (deref-info-reg info) REG-CLASS-GPR-64)
+    (setf (deref-info-reg info) +reg-class-gpr-64+)
     (setf (deref-info-mem-deref info) true)
 
     (when (tc this (typespec-new "float") ts)
-      (setf (deref-info-reg info) REG-CLASS-FLOAT))
+      (setf (deref-info-reg info) +reg-class-float+))
 
     (cond
       ((== (base-type ts) "inline-array")
@@ -384,9 +384,9 @@
          (if (is-reference? result-type)
              ;; in memory, an array of pointers
              (progn
-               (setf (deref-info-stride info) POINTER-SIZE)
+               (setf (deref-info-stride info) +pointer-size+)
                (setf (deref-info-sign-extend info) false)
-               (setf (deref-info-load-size info) POINTER-SIZE))
+               (setf (deref-info-load-size info) +pointer-size+))
              (progn
                ;; an array of values, which should be loaded in the correct way to the correct register
                (setf (deref-info-stride info) (get-size-in-memory result-type))
@@ -419,13 +419,14 @@
 
 ;; Make the type specification for the type
 ;
-(defmethod make-a-typespec ((this type-system) (name string))
+(defun make-a-typespec (this name)
   ;;(-> type-system? symbol? typespec?)
-  (if (or (types-find this name)
-          (forward-declared-types-find this name))
-      (typespec-new name)
-      (progn
-        (error (format nil "Can't make a typespec because type `~a` is unknown" name)))))
+  (let ((aname (stringify name)))
+    (if (or (types-find this aname)
+	    (forward-declared-types-find this aname))
+	(typespec-new aname)
+	(progn
+	  (error (format nil "Can't make a typespec because type `~a` is unknown" aname))))))
 
 
 (defun make-array-typespec (element-type)
@@ -831,7 +832,7 @@
   ;;
   (defun type-get-any-method-by-id (type method-id)
     (cond
-      ((== method-id GOAL-NEW-METHOD)
+      ((== method-id +goal-new-method+)
        (gtype-get-my-new-method type))
       (else
        (gtype-get-my-method-by-id type method-id))))
@@ -884,7 +885,7 @@
 (defun lookup-method-by-method-id (this type-name method-id)
   ;;(-> type-system? symbolp integer? method-info?)
   (cond
-    ((== method-id GOAL-NEW-METHOD)
+    ((== method-id +goal-new-method+)
      (lookup-new-method this type-name))
     (else
      ;; first lookup the type
@@ -1094,7 +1095,7 @@
       (when skip-in-static-decomp
         (setf (field-skip-in-static-decomp field) t))
 
-      (setf (field-field-score field) score)
+      (setf (field-field-score field) (float score))
       (let* ((field-size (get-size-in-type this field))
              (after-field (+ offset field-size)))
         (when (< (struct-type-get-size-in-memory type) after-field)
@@ -1147,7 +1148,7 @@
            ;; it is a value type, so it's stored in full:
            (get-in-memory-alignment fld-type)
            ;; otherwise it's a reference
-           POINTER-SIZE)))))
+           +pointer-size+)))))
 
 (defun allow-inline (type)
   ;;(-> type? boolean?)
@@ -1180,7 +1181,7 @@
                      (get-inl-array-stride-align fld-type))))
         (else
          (if (is-reference? fld-type)
-             (* (field-array-size afield) POINTER-SIZE)
+             (* (field-array-size afield) +pointer-size+)
              (* (field-array-size afield)
                 (align-n (get-size-in-memory fld-type)
                        (get-in-memory-alignment fld-type)))))))
@@ -1203,7 +1204,7 @@
          (get-size-in-memory fld-type))
         (else
          (if (is-reference? fld-type)
-             POINTER-SIZE
+             +pointer-size+
              (align-n (get-size-in-memory fld-type)
                       (get-in-memory-alignment fld-type))))))
     ;;
@@ -1593,7 +1594,7 @@
   ;;(-> type-system? type? string?)
   (let ((result "")
         (method-count (get-next-method-id this type))
-        (flags (type-flags-new))
+        (flags (make-type-flags))
         (methods-string "")
         (states-string ""))
     (defun result-append (str)

@@ -11,32 +11,32 @@
 
 (in-package :type-system/interfaces)
 ;(defun xxx () 1000)
-(defconstant POINTER-SIZE 4)
-(defconstant STRUCTURE-ALIGNMENT 16)
+(defconstant +pointer-size+ 4)
+(defconstant +structure-alignment+ 16)
 
-;; Globaly used empty symbol
+;; globaly used empty symbol
 
-(defconstant EMPTY-SYMBOL :||)
+(defconstant +empty-symbol+ :||)
 
-;; The register type
+;; the register type
 
-(defconstant REG-CLASS-GPR-64 0)
-(defconstant REG-CLASS-FLOAT 1)
-(defconstant REG-CLASS-INT-128 2)
-(defconstant REG-CLASS-VECTOR_FLOAT 3)
-(defconstant REG-CLASS-INVALID 4)
+(defconstant +reg-class-gpr-64+ 0)
+(defconstant +reg-class-float+ 1)
+(defconstant +reg-class-int-128+ 2)
+(defconstant +reg-class-vector_float+ 3)
+(defconstant +reg-class-invalid+ 4)
 
-;; The offset if the method from begin of methods table
+;; the offset if the method from begin of methods table
 
-(defconstant GOAL-NEW-METHOD 0)       ;; method ID of GOAL new
-(defconstant GOAL-DEL-METHOD 1)       ;; method ID of GOAL delete
-(defconstant GOAL-PRINT-METHOD 2)     ;; method ID of GOAL print
-(defconstant GOAL-INSPECT-METHOD 3)   ;; method ID of GOAL inspect
-(defconstant GOAL-LENGTH-METHOD 4)    ;; method ID of GOAL length
-(defconstant GOAL-ASIZE-METHOD 5)     ;; method ID of GOAL size
-(defconstant GOAL-COPY-METHOD 6)      ;; method ID of GOAL copy
-(defconstant GOAL-RELOC-METHOD 7)     ;; method ID of GOAL relocate
-(defconstant GOAL-MEMUSAGE-METHOD 8)  ;; method ID of GOAL mem-usage
+(defconstant +goal-new-method+ 0)       ;; method+ id of goal new
+(defconstant +goal-del-method+ 1)       ;; method+ id of goal delete
+(defconstant +goal-print-method+ 2)     ;; method+ id of goal print
+(defconstant +goal-inspect-method+ 3)   ;; method+ id of goal inspect
+(defconstant +goal-length-method+ 4)    ;; method+ id of goal length
+(defconstant +goal-asize-method+ 5)     ;; method+ id of goal size
+(defconstant +goal-copy-method+ 6)      ;; method+ id of goal copy
+(defconstant +goal-reloc-method+ 7)     ;; method+ id of goal relocate
+(defconstant +goal-memusage-method+ 8)  ;; method+ id of goal mem-usage
 
 ;; ==============================================================================
 ;; Inspect the object

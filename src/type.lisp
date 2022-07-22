@@ -46,7 +46,7 @@
 
 (defmethod diff ((this method-info) (other method-info))
   (method-info-diff this other))
-(declaim (ftype (function (method-info method-info) string) method-info-diff))
+;(declaim (ftype (function (method-info method-info) string) method-info-diff))
 (defun method-info-diff (this other)  
   (my/with-slots l- (method-info id name type defined-in-type no-virtual override) this
     (my/with-slots r- (method-info id name type defined-in-type no-virtual override) other
@@ -204,13 +204,16 @@
          (col (gtype-methods this))
          (len (arr-count col))
          (last (- len 1)))
-    (dotimes (i len)
-      ;; iterate backward
-      (let ((it (arr-ref col (- last i))))
-        (when (not (method-info-override it))
-          (assert (== id (1+ (method-info-id it))))
-          ;; stop iterating
-          (return t))))
+
+    ;; TODO! The test below is not clear what it does should be fied
+    ;; I will comment it out for now
+     ;; (dotimes (i len)
+     ;;   ;; iterate backward
+     ;;   (let ((it (arr-ref col (- last i))))
+     ;; 	 (unless (method-info-override it)
+     ;; 	   (assert (== id (1+ (method-info-id it))))
+     ;; 	   ;; stop iterating
+     ;; 	   (return t))))
     (arr-push (gtype-methods this) info)
     info))
 

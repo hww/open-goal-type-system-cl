@@ -17,6 +17,7 @@
                (:file "builting-types" :depends-on ("package" "type-system" "basic-types" "type"))
                (:file "defenum" :depends-on ("package" "type-system" "basic-types" "type"))
                (:file "deftype" :depends-on ("package" "type-system" "basic-types" "type"))
+	       (:file "state" :depends-on ("package" "type-system" "basic-types" "type"))
                ))
 
 
@@ -35,5 +36,6 @@
                (:file "basic-types-test" :depends-on ("package" "test-lib"))
                (:file "type-system-test" :depends-on ("package" "test-lib"))
                (:file "defenum-test" :depends-on ("package" "test-lib"))
+	       (:file "deftype-test" :depends-on ("package" "test-lib"))
                (:file "main" :depends-on ("package" "typespec-test" "type-test" "basic-types-test" "type-system-test"))
                ))

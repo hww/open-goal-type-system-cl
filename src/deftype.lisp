@@ -45,8 +45,8 @@
 ;; The typedefinition result
 ;; (type-flags? type-spec? type? boolean?)
 (defstruct (deftype-res (:include type-flags))
-           (type nil :type (or null string))
-           (type-info nil :type (or null typespec))
+           (type nil :type (or null typespec))
+           (type-info nil :type (or null gtype))
            (create-runtime-type t :type boolean))
 
 ;; The structure definition result
@@ -71,12 +71,19 @@
 
 (defun get-float (e)
   ;;(-> syntax? integer?)
-  (if (number? e) e (error (format nil "Expected floating point value, found ~a" e))))
+  (if (number? e) (float e) (error (format nil "Expected floating point value, found ~a" e))))
 
-(defun get-symbol (e)
+(defun name? (e)
+  ;;(-> syntax? symbol?)
+  (cond ((string? e) t)
+        ((symbol? e) t)
+	(t nil)))
+
+;; TODO  Fix a down and up case
+(defun get-name (e)
   ;;(-> syntax? symbol?)
   (cond ((string? e) e)
-        ((symbol? e) (symbol-name e))
+        ((symbol? e)  (string-downcase (symbol-name e)))
         (else (error (format nil "Expected a symbol value, found ~a" e)))))
 
 (defun get-list (e)
@@ -86,6 +93,24 @@
 (defun is-type (this expected actual)
  ;;(-> symbol? type-spec? type-system? boolean?)
   (tc this (make-a-typespec this expected) actual))
+
+;; Returns without the collumn
+(defun keyword-name (it)
+  (cond
+    ((keyword? it) (string-downcase (symbol-name it)))
+    ((symbol? it) (string-downcase (symbol-name it)))
+    (t (error (format nil "Expected a list value, found ~a" it)))))
+  
+;; Check in the expression is a tag's key by the first character
+(defun is-keyword? (s)
+  (or
+   (keyword? s)
+   (and (string? s) (== #\: (string-ref s 0)))))
+  
+;; helper function to check if the object is a tag name
+(defun compare-keyword (it tag)
+  (and (keyword? it)
+       (== tag (string-downcase (symbol-name it)))))
 
 ;; ==============================================================================
 
@@ -101,8 +126,7 @@
     (unless (null? rest)
       (error "invalid parent list in deftype - can only have one parent"))
     (cond
-      ((symbol? name) (symbol-name name))
-      ((string? name) name)
+      ((name? name) (get-name name))
       (else
        (error "invalid parent in deftype parent list")))))
 
@@ -110,12 +134,12 @@
 ;; Add fiels
 ;; ==============================================================================
 
-(defun add-field (structure ts def constants)
-  ;;(-> struct-type? type-system? (listof syntax?) hash? void?)
-                                        ;(printf "Add field ~a~%" def)
+(defun add-field (this structure def constants)
+  ;;(-> type-system? struct-type?  (listof syntax?) hash? void?)
+  (printf "Add field ~a~%" def)
 
-  (let* ((name (get-symbol (car def)))
-         (type (parse-typespec ts (cadr def)))
+  (let* ((name (get-name (car def)))
+         (type (parse-typespec this (cadr def)))
          (rest (cddr def))
          (array-size -1)
          (is-inline false)
@@ -125,61 +149,64 @@
          (score 0)
          (skip-in-decomp false))
 
+    ;; (when (== (format nil "~a" name) "_pad")
+    ;;   (break))
+    
     (unless (null? rest)
 
       (cond
         ((integer? (car rest))
          (setf array-size (get-int (car rest)))
          (setf rest (cdr rest)))
-        ((symbol? (car rest))
-         (let ((key (get-symbol (car rest))))
+        ((name? (car rest))
+         (let ((key (get-name (car rest))))
            (when (hash-has-key? constants key)
              (setf array-size (hash-ref constants key))
              (setf rest (cdr rest))))))
-
+      
       (loop
         (when (null? rest)
           (return))
-        (let ((opt-name (get-symbol (car rest))))
+        (let ((opt-name (get-name (car rest))))
           (setf rest (cdr rest))
 
           (cond
-            ((== opt-name ":inline")
+            ((== opt-name "inline")
              (setf is-inline true))
-            ((== opt-name ":dynamic")
+            ((== opt-name "dynamic")
              (setf is-dynamic true))
-            ((== opt-name ":offset")
+            ((== opt-name "offset")
              (setf offset-override (get-int (car rest)))
              (setf rest (cdr rest)))
-            ((== opt-name ":overlay-at")
-             (let* ((field-name (get-symbol (car rest)))
+            ((== opt-name "overlay-at")
+             (let* ((field-name (get-name (car rest)))
                     (overlay-field (struct-type-lookup-field structure field-name)))
                (unless overlay-field
                  (error
                   (format nil "Field ~a not found to overlay for ~a" field-name name)))
                (setf offset-override (field-offset overlay-field))
                (setf rest (cdr rest))))
-            ((== opt-name ":score")
+            ((== opt-name "score")
              (setf score (get-float (car rest)))
              (setf rest (cdr rest)))
-            ((== opt-name ":offset-assert")
+            ((== opt-name "offset-assert")
              (setf offset-assert (get-int (car rest)))
              (when (== offset-assert -1)
                (error "Cannot use -1 as offset-assert"))
              (setf rest (cdr rest)))
-            ((== opt-name ':do-not-decompile)
+            ((== opt-name "do-not-decompile")
              (setf skip-in-decomp true))
             (else
-             (error (format nil "Invalid option in field specification: ~a" opt-name))))))
+             (error (format nil "Invalid option in field specification: ~a" opt-name)))))))
 
-      (let ((actual-offset (add-field-to-type ts
-                                              structure name type is-inline is-dynamic
-                                              array-size offset-override skip-in-decomp score)))
-                                        ;(printf "Added field to structure ~a~%" (inspect structure))
-        (when (and (!= offset-assert -1)
-                   (!= actual-offset offset-assert))
-          (error (format nil "Field ~a  was placed at ~a but offset-assert was set to ~a"
-                         name  actual-offset offset-assert)))))))
+    (let ((actual-offset (add-field-to-type this
+					    structure name type is-inline is-dynamic
+					    array-size offset-override skip-in-decomp score)))
+                                        ;(printf "Added field to structure ~a~%" (to-str structure))
+      (when (and (!= offset-assert -1)
+		 (!= actual-offset offset-assert))
+	(error (format nil "Field ~a  was placed at ~a but offset-assert was set to ~a"
+		       name  actual-offset offset-assert))))))
 
 
 ;; ==============================================================================
@@ -190,7 +217,7 @@
   ;;(-> type-system? bitfield-type?  (listof syntax?) void?)
   (log-debug "add-bitfield~%~a~%~%" def)
 
-  (let ((name (get-symbol (car def)))
+  (let ((name (get-name (car def)))
         (type (parse-typespec this (cadr def)))
         (rest (cddr def))
         (offset-override -1)
@@ -200,16 +227,16 @@
     (loop
       (when (null rest)
         (return))
-      (let ((opt-name (get-symbol (car rest))))
+      (let ((opt-name (keyword-name (car rest))))
         (set! rest (cdr rest))
         (cond
-          ((== opt-name ":offset")
+          ((== opt-name "offset")
            (setf offset-override (get-int (car rest)))
            (setf rest (cdr rest)))
-          ((== opt-name ":size")
+          ((== opt-name "size")
            (setf size-override (get-int (car rest)))
            (setf rest (cdr rest)))
-          ((== opt-name ":do-not-decompile")
+          ((== opt-name "do-not-decompile")
            (setf skip-in-decomp true))
           (else
            (error (format nil "Invalid option in field specification: ~a" opt-name))))))
@@ -231,25 +258,11 @@
 (defun parse-declare-method (this type def)
   ;;(-> type? type-system? (listof syntax?) void?)
   ;; - -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
-  ;; helper function to check if the object is a tag name
-  (defun is-tag (it tag)
-    (cond
-      ((null? it) nil)
-      ((symbol? it) (== tag it))
-      ((list? it) (is-tag (car it) tag))
-      (else nil)))
-  (defun is-integer? (it)
-    (cond
-      ((null? it) nil)
-      ((integer? it) T)
-      ((list? it) (is-integer? (car it)))
-      (else nil)))
-  ;; - -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
   (log-debug "parse-declare-method~%~a~%~%" def)
   (loop for obj in def do
 
     ;; name args return-type [:no-virtual] [:replace] [:state] [id])
-    (let ((method-name (get-symbol (car obj)))
+    (let ((method-name (get-name (car obj)))
           (args (cadr obj))
           (return-type (caddr obj))
           (no-virtual false)
@@ -259,25 +272,25 @@
       ;; skip name args and return
       (set! obj (cdddr obj))
 
-      (when (is-tag obj ":no-virtual")
+      (when (compare-keyword (car obj) "no-virtual")
         (set! obj (cdr obj))
         (set! no-virtual true))
 
-      (when (is-tag  obj ":replace")
+      (when (compare-keyword  (car obj) "replace")
         (set! obj (cdr obj))
         (set! replace-method true))
 
-      (when (is-tag obj ":state")
+      (when (compare-keyword (car obj) "state")
         (set! obj (cdr obj))
-        (set! function-typespec (typespec-new 'state)))
+        (set! function-typespec (typespec-new "state")))
 
-      (when (is-tag obj ":behavior")
+      (when (compare-keyword (car obj) "behavior")
         (set! obj (cdr obj))
-        (typespec-add-new-tag function-typespec 'behavior (get-symbol (car obj)))
+        (typespec-add-new-tag function-typespec "behavior" (get-name (car obj)))
         (set! obj (cdr obj)))
 
 
-      (when (is-integer? obj)
+      (when (integer? (car obj))
         (set! id (get-int (car obj)))
         (set! obj (cdr obj)))
 
@@ -317,7 +330,7 @@
     (cond
       ((list? obj)
        ;; (name ,@args)
-       (let ((state-name (get-symbol (car obj)))
+       (let ((state-name (get-name (car obj)))
              (args (cdr obj))
              (state-typespec (typespec-new "state")))
          (loop for o in args do
@@ -326,8 +339,8 @@
          (gtype-add-state type state-name state-typespec)))
       (else
        ;; name
-       (let ((state-name (if (symbol? obj) obj (get-symbol obj)))
-             (state-typespec (typespec-new 'state)))
+       (let ((state-name (if (symbol? obj) obj (get-name obj)))
+             (state-typespec (typespec-new "state")))
          (typespec-args-add state-typespec (typespec-new (gtype-name type)))
          (gtype-add-state type state-name state-typespec))))
     (loop for it in def do
@@ -341,7 +354,7 @@
   ;;(-> struct-type? type-system? (listof syntax?) (listof syntax?) hash? defstruct-res?)
 
   (let ((result (make-defstruct-res))
-        (size-assert  -1)
+        (size-assert -1)
         (method-count-assert -1)
         (flag-assert 0)
         (flag-assert-set false)
@@ -362,57 +375,57 @@
           ((list? (car rest))
            (let* ((opt-list (car rest))
                   (first (car opt-list))
-                  (list-name (get-symbol first)))
+                  (list-name (keyword-name first)))
              (setf opt-list (cdr opt-list))
-             (cond ((== list-name ":methods")
+             (cond ((== list-name "methods")
                     (parse-declare-method this type opt-list))
-                   ((== list-name ":states")
+                   ((== list-name "states")
                     (declare-state this type opt-list))
                    (else
                     (error (format nil "Invalid option list in field specification: ~a" (car rest)))))
              (setf rest (cdr rest))))
           (else
-           (let ((opt-name (get-symbol (car rest))))
+           (let ((opt-name (keyword-name (car rest))))
              (setf rest (cdr rest))
              (cond
-               ((== opt-name ":size-assert")
+               ((== opt-name "size-assert")
                 (setf size-assert (get-int (car rest)))
                 (when (== size-assert -1)
                   (error "Cannot use -1 as size-assert"))
                 (setf rest (cdr rest)))
-               ((== opt-name ":method-count-assert")
+               ((== opt-name "method-count-assert")
                 (setf method-count-assert (get-int (car rest)))
                 (when (== method-count-assert -1)
                   (error "Cannot use -1 as method-count-assert"))
                 (setf rest (cdr rest)))
-               ((== opt-name ":flag-assert")
+               ((== opt-name "flag-assert")
                 (setf flag-assert (get-int (car rest)))
                 (setf flag-assert-set true)
                 (setf rest (cdr rest)))
-               ((== opt-name ":no-runtime-type")
+               ((== opt-name "no-runtime-type")
                 (setf (defstruct-res-generate-runtime-type result) false))
-               ((== opt-name ":no-inspect")
+               ((== opt-name "no-inspect")
                 (setf (gtype-generate-inspect type) false))
-               ((== opt-name ":pack-me")
+               ((== opt-name "pack-me")
                 (setf (defstruct-res-pack-me result)  true))
-               ((== opt-name ":heap-base")
+               ((== opt-name "heap-base")
                 (let ((hb (get-int (car rest))))
                   (when (!= (mod hb #x10) 0)
                     (error "heap-base is not 16-byte aligned"))
                   (setf rest (cdr rest))
                   (setf (type-flags-heap-base result) hb)
                   (setf set-heapbase true)))
-               ((== opt-name ":allow-misaligned")
+               ((== opt-name "allow-misaligned")
                 (setf (defstruct-res-allow-misaligned result) true))
-               ((== opt-name ":final")
+               ((== opt-name "final")
                 (setf (defstruct-res-final result) true))
-               ((== opt-name ":always-stack-singleton")
+               ((== opt-name "always-stack-singleton")
                 (setf (defstruct-res-always-stack-singleton result) true))
                (else
                 (error (format nil "Invalid option in field specification: ~a" opt-name)))))))))
     ;; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     (when (and (fully-defined-type-exists this (typespec-new "process"))
-               (tc this (typespec-new 'process) (typespec-new (gtype-parent type))))
+               (tc this (typespec-new "process") (typespec-new (gtype-parent type))))
       ;; check heap-base if this is a child of process.
       (let* ((process-type (get-type-of-type this #'basic-type-p "process"))
              (auto-hb (align-n (- (type-flags-size result)
@@ -475,35 +488,35 @@
         (when (null rest)
           (return))
         (cond
-          ((is-pair? (car rest))
+          ((list? (car rest))
            (let* ((opt-list (car rest))
                  (first (car opt-list)))
                (setf opt-list (cdr opt-list))
-             (if (== (get-symbol first) ":methods")
+             (if (== (get-name first) "methods")
                  (parse-declare-method this type opt-list)
                  (error (format nil "Invalid option list in field specification: ~a" (car rest))))
              (setf rest (cdr rest))))
           (else
-           (let ((opt-name (get-symbol (car rest))))
+           (let ((opt-name (keyword-name (car rest))))
              (setf rest (cdr rest))
              (cond
-               ((== opt-name ":size-assert")
+               ((== opt-name "size-assert")
                 (setf size-assert (get-int (car rest)))
                 (when (== size-assert -1)
                   (error "Cannot use -1 as size-assert"))
                 (setf rest (cdr rest)))
-               ((== opt-name ":method-count-assert")
+               ((== opt-name "method-count-assert")
                 (setf method-count-assert (get-int (car rest)))
                 (when (== method-count-assert -1)
                   (error "Cannot use -1 as method-count-assert"))
                 (setf rest (cdr rest)))
-               ((== opt-name ":flag-assert")
+               ((== opt-name "flag-assert")
                 (setf flag-assert (get-int (car rest)))
                 (setf flag-assert-set true)
                 (setf rest (cdr rest)))
-               ((== opt-name ":no-runtime-type")
+               ((== opt-name "no-runtime-type")
                 (setf (defbitfield-res-generate-runtime-type result) false))
-               ((== opt-name ":no-inspect")
+               ((== opt-name "no-inspect")
                 (setf (gtype-generate-inspect type) false))
                (else
                 (error (format nil "Invalid option in field specification: ~a" opt-name)))))))))
@@ -523,7 +536,7 @@
 
   (when (and flag-assert-set
              (!= (type-flags-flag result) flag-assert))
-    (error 'deftype
+    (error 
      (format nil "Type ~a has flag 0x~X but flag-assert was set to 0x~X"
              (gtype-name type)
              (type-flags-flag result)
@@ -539,41 +552,36 @@
 (defun parse-typespec (this exp)
   ;;(-> thistem? syntax? typespec?)
   ;; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  ;; Check in the expression is a tag's key by the first character
-  (defun is-tag-name? (s)
-    (or (and (string? s) (equal? #\: (string-ref s 0)))
-        (and (symbol? s) (equal? #\: (string-ref (symbol-name s) 0)))))
-  ;; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  ;;
-  (let ((e exp))
     (cond
-      ((symbol? e)
+      ((symbol? exp)
        ;; parse -only the type name
-       (make-typespec this e))
-      ((list? e)
+       (make-a-typespec this exp))
+      ((list? exp)
        ;; parse - the list if elements as children types or tags
        ;; make a type
-       (let ((ts (make-typespec this (car e)))
+       (let ((ts (make-a-typespec this (car exp)))
              (tag-name nil)
              (tag-val nil))
          ;; parse rest of items
-         (let ((rest (cdr e)))
+         (let ((rest (cdr exp)))
            (loop
              (when (null rest)
                (return))
              (let ((it (car rest)))
                (cond
-                 ((is-tag-name? it)
-                  (set! tag-name (get-symbol it))
-                  (set! rest (cdr rest))
+                 ((is-keyword? it)
+                  (setf tag-name (keyword-name it))
+
+                  (setf rest (cdr rest))
 
                   (when (null? rest)
                     (error "TypeSpec missing tag value"))
-                  (set! tag-val (car rest))
+                  (setf tag-val (car rest))
 
                   (cond
-                    ((== tag-name ":behavior")
-                     (let ((val (get-symbol tag-val)))
+                    ((== tag-name "behavior")
+
+                     (let ((val (get-name tag-val)))
                        (when (and (not (fully-defined-type-exists this val))
                                   (not (partially-defined-type-exists this val)))
                          (error (format nil "Behavior tag uses an unknown type ~a" val)))
@@ -581,12 +589,13 @@
                     (else
                      (error (format nil "Type tag ~a is unknown" tag-name)))))
                  (else
-                  ;; normal argument.
+                  ;; normal argument for example type name or
+		  ;; a type list
                   (typespec-args-add ts (parse-typespec this it)))))
              (setf rest (cdr rest))))
          ts))
       (else
-       (error (format nil "invalid typespec: ~a" exp))))))
+       (error (format nil "invalid typespec: ~a" exp)))))
 
 ;; ==============================================================================
 ;; Deftype
@@ -607,7 +616,7 @@
     (unless (symbol? type-name-obj)
       (error "deftype must be given a symbol as the type name"))
 
-    (let* ((name (get-symbol type-name-obj))
+    (let* ((name (get-name type-name-obj))
            (parent-type-name (deftype-parent-list (get-list parent-list-obj)))
            (parent-type (make-a-typespec this parent-type-name))
            (result (make-deftype-res)))
@@ -621,7 +630,7 @@
              (format nil "[TypeSystem] Cannot make a child type ~a of final basic type ~a"
                      name parent-type-name)))
           (struct-type-inherit new-type pto)
-          (forward-declare-type-as this name 'basic)
+          (forward-declare-type-as this name "basic")
           ;; returns StructureDefResult
           (let ((sr (parse-structure-def this new-type field-list-obj options-obj constants-to-use)))
             (my/with-slots sr-
@@ -706,6 +715,6 @@
 
 (defun parse-declare-type (this rest)
   ;;(-> (listof syntax?) type-system? void)
-  (let* ((type-name (get-symbol (car rest)))
-         (kind (get-symbol (cadr rest))))
+  (let* ((type-name (get-name (car rest)))
+         (kind (get-name (cadr rest))))
     (forward-declare-type-as this type-name kind)))

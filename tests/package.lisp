@@ -20,6 +20,7 @@
    :run-basic-types-test
    :run-type-system-test
    :run-defenum-test
+   :tun-deftype-test
    )
   (:reexport
    :type-system

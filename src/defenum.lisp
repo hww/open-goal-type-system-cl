@@ -15,20 +15,23 @@
 ;; Utilities
 ;; ==============================================================================
 
-(defun is-key? (obj)
-  "Verify if the string starts with ':' character"
+;; Returns without the collumn
+(defun keyword-name-or-nil (it)
+  (cond
+    ((keyword? it) (string-downcase (symbol-name it)))
+    ((symbol? it) (string-downcase (symbol-name it)))
+    (t nil)))
+  
+;; Check in the expression is a tag's key by the first character
+(defun is-keyword? (s)
   (or
-   (and (stringp obj) (== #\: (char obj 0)))
-   (and (symbolp obj) (== #\: (char (symbol-name obj) 0)))))
-
-(defun get-key (obj)
-  "Return object starts with ':' character or null"
-  (if (is-key? obj)
-      (cond
-        ((stringp obj) obj)
-        ((symbolp obj) (symbol-name obj))
-        (t nil))
-      nil))
+   (keyword? s)
+   (and (string? s) (== #\: (string-ref s 0)))))
+  
+;; helper function to check if the object is a tag name
+(defun compare-keyword (it tag)
+  (and (keyword? it)
+       (== tag (string-downcase (symbol-name it)))))
 
 (defun get-boolean (obj)
   "Return a boolean value or make error"
@@ -36,6 +39,9 @@
       obj
       (error (format nil "Expected boolean value found ~a" obj))))
 
+(defun make-type-name (s)
+  (string-downcase (symbol-name s)))
+		   
 ;; ==============================================================================
 ;;
 ;; Parse defenum
@@ -57,7 +63,7 @@
 (defun parse-defenum (this defenum)
   "Parse s-expression and build the enum type"
   ;; helper
-  (defun is-type (expected actual)
+  (defun parse-defenum-is-type (expected actual)
     ;;(-> symbol? typespec? boolean?)
     (tc this (make-a-typespec this expected) actual))
 
@@ -83,7 +89,7 @@
         ;;
         (setf current (car iter))
         ;; get option name
-        (setf option-name (get-key current))
+        (setf option-name (keyword-name-or-nil current))
         (setf iter (cdr iter))
         (when option-name
           ;; get option value
@@ -91,15 +97,15 @@
           (setf iter (cdr iter))
           ;; parse option
           (cond
-            ((== option-name ":type")
+            ((== option-name "type")
              (setf par-type (parse-typespec this option-value)))
-            ((== option-name ":bitfield")
+            ((== option-name "bitfield")
              (cond
                ((boolean? option-value)
                 (setf is-bitfield (get-boolean option-value)))
                (else
                 (error (format nil "Invalid option `~a` to :bitfield option.\n" option-value)))))
-            ((== option-name ":copy-entries")
+            ((== option-name "copy-entries")
              (setf other-info (try-enum-lookup this (parse-typespec this option-value)))
              (unless other-info
                (error (format nil "Cannot copy entries from `~a`, it is not a valid enum type" option-value)))
@@ -157,11 +163,12 @@
           (setf iter (cdr iter))))
       ;; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
       (cond
-            ((is-type "integer" par-type)
-             (let* ((parent (get-type-of-type this #'value-type-p (base-type par-type)))
-                    (new-type (enum-type-new parent enum-name is-bitfield entries)))
+            ((parse-defenum-is-type "integer" par-type)
+             (let* ((s-enum-name (make-type-name enum-name))
+		    (parent (get-type-of-type this #'value-type-p (base-type par-type)))
+                    (new-type (enum-type-new parent s-enum-name is-bitfield entries)))
                (gtype-set-runtime-type new-type (gtype-runtime-name parent))
-               (add-type this (symbol-name enum-name) new-type)
+               (add-type this s-enum-name new-type)
                new-type))
             (else
              (error (format nil "Creating an enum with type `~a` is not allowed or not supported yet."

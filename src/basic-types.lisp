@@ -29,7 +29,7 @@
   (skip-in-static-decomp
    nil :type boolean)                 ; bool? = false;
   (is-user-placed nil :type boolean)  ; bool? = false;  // was this field placed manually by the user?
-  (field-score 0.0 :type float)       ; double? = 0.;
+  (field-score 0.0 :type number)       ; double? = 0.;
   )
 
 (declaim (ftype (function (string typespec integer) field) field-new))
@@ -45,11 +45,11 @@
 
 (defun field-set-inline (this)
   "Mark a field as inline. This has a different meaning depending on if the field is also an array"
-  (setf (field-is-inline this) T))
+  (setf (field-is-inline this) t))
 
 (defun field-set-dynamic (this)
   "Mark a field as dynamic, indicating it has array semantics."
-  (setf (field-is-dynamic this) T))
+  (setf (field-is-dynamic this) t))
 
 (defun field-set-array (this size)
   "Mark a field as a fixed (size integer) array."
@@ -63,10 +63,10 @@
   (setf (field-offset this) align))
 
 (defun field-set-skip-in-static-decomp (this)
-  (setf (field-skip-in-static-decomp this) T))
+  (setf (field-skip-in-static-decomp this) t))
 
 (defun field-mark-as-user-placed (this)
-  (setf (field-is-user-placed this) T))
+  (setf (field-is-user-placed this) t))
 
 (defun field-set-field-score (this score)
   (setf (field-field-score this) score))
@@ -90,7 +90,7 @@
         (when (!= l-name r-name)
           (string-append! result (format nil "name: ~a vs. ~a~%" l-name r-name)))
         (when (!= l-type r-type)
-          (string-append! result (format nil "type: ~a vs. ~a~%" (inspect l-type) (inspect r-type))))
+          (string-append! result (format nil "type: ~a vs. ~a~%" (to-str l-type) (to-str r-type))))
         (when (!= l-offset r-offset)
           (string-append! result (format nil "offset: ~a vs. ~a~%" l-offset r-offset)))
         (when (!= l-is-inline r-is-inline)
@@ -136,7 +136,7 @@
                                         ;(declaim (ftype (function (symbol) null-type) null-type-new))
 (defun null-type-new (name)
   "Constructor"
-  (let* ((base (gtype-new EMPTY-SYMBOL name nil 0))
+  (let* ((base (gtype-new +empty-symbol+ name nil 0))
          (new (copy-parent-struct-func :type-system/type (make-null-type) base)))
     new))
 
@@ -183,12 +183,12 @@
   (size -1 :type integer)
   (offset 0 :type integer)
   (sign-extend nil :type boolean)            
-  (reg-kind REG-CLASS-INVALID :type integer))
+  (reg-kind +reg-class-invalid+ :type integer))
 
 ;; Constructor
 
                                         ;(declaim (ftype (function (symbol symbol boolean integer boolean &optional integer) value-type) value-type-new))
-(defun value-type-new (parent name is-boxed size sign-extend &optional (reg-kind REG-CLASS-INVALID))
+(defun value-type-new (parent name is-boxed size sign-extend &optional (reg-kind +reg-class-invalid+))
   (let* ((base (gtype-new parent name is-boxed 0))
          (new (copy-parent-struct-func
                :type-system/type
@@ -286,21 +286,21 @@
 (defmethod is-reference? ((this reference-type))
   T)
 (defmethod get-load-size ((this reference-type))
-  POINTER-SIZE)
+  +pointer-size+)
 (defmethod get-size-in-memory ((this reference-type))
-  POINTER-SIZE)
+  +pointer-size+)
 (defmethod get-load-signed ((this reference-type))
   nil)
 (defmethod get-offset ((this reference-type))
-  POINTER-SIZE)
+  +pointer-size+)
 (defmethod get-in-memory-alignment ((this reference-type))
-  POINTER-SIZE)
+  +pointer-size+)
 (defmethod get-inl-array-stride-align ((this reference-type))
-  POINTER-SIZE)
+  +pointer-size+)
 (defmethod get-inl-array-start-align ((this reference-type))
-  POINTER-SIZE)
+  +pointer-size+)
 (defmethod get-preferred-reg-class ((this reference-type))
-  REG-CLASS-GPR-64)
+  reg-class-gpr-64)
 
 
 (defmethod to-str ((this reference-type))
@@ -359,9 +359,9 @@
 
 
 (defmethod is-reference? ((this struct-type))
-  T)
+  t)
 (defmethod get-load-size ((this struct-type))
-  POINTER-SIZE)
+  +pointer-size+)
 (defmethod get-size-in-memory ((this struct-type))
   (struct-type-size-in-mem this))
 (defmethod get-load-signed ((this struct-type))
@@ -369,7 +369,7 @@
 (defmethod get-offset ((this struct-type))
   (struct-type-offset this))
 (defmethod get-in-memory-alignment ((this struct-type))
-  STRUCTURE-ALIGNMENT)
+  +structure-alignment+)
 (defmethod get-inl-array-stride-align ((this struct-type))
   (get-inl-array-stride-align-impl this))
 (defmethod get-inl-array-start-align ((this struct-type))
@@ -468,7 +468,7 @@
        alignment))
     (else
      ;; make elements of inline array properly aligned structures
-     STRUCTURE-ALIGNMENT)))
+     +structure-alignment+)))
 
 (defun get-inl-array-start-align-impl (this)
   (cond
@@ -483,7 +483,7 @@
        alignment))
     (else
      ;; make elements of inline array properly aligned structures
-     STRUCTURE-ALIGNMENT)))
+     +structure-alignment+)))
 
 ;; Find the filed by name
 
@@ -497,7 +497,7 @@
                                         ; (-> struct-type? string?)
   (apply 'string-append
          (map 'list
-              #'(lambda (f) (format nil "    ~a~%" (inspect f)))
+              #'(lambda (f) (format nil "    ~a~%" (to-str f)))
               (struct-type-fields this))))
 
 ;; Find the method wih name
@@ -514,13 +514,13 @@
   (setf (struct-type-idx-of-first-unique-field this) (arr-count (struct-type-fields parent))))
 
 (defun struct-type-add-field (this f new-size-in-mem)
-                                        ;;(-> struct-type? field? integer? void)
+  ;;(-> struct-type? field? integer? void)
   (arr-push (struct-type-fields this) f)
-                                        ;;(printf "ADD FIELD (~a) NEW-SIZE ~a~%" (inspect f) new-size-in-mem)
+  ;;(printf "ADD FIELD (~a) NEW-SIZE ~a~%" (to-str f) new-size-in-mem)
   (setf (struct-type-size-in-mem this) new-size-in-mem))
 
 (defun struct-type-get-size-in-memory (this)
-                                        ;;  (-> struct-type? integer?)
+  ;;  (-> struct-type? integer?)
   (struct-type-size-in-mem this))
 
 (defun struct-type-override-size-in-memory (this size)
@@ -559,7 +559,7 @@
   (basic-type-diff this other))
 
 (defun basic-type-new (parent name &optional (dynamic nil) (heap-size 0))
-  (let* ((base (struct-type-new parent name T dynamic nil heap-size))
+  (let* ((base (struct-type-new parent name t dynamic nil heap-size))
          (new  (copy-parent-struct-func
                 :type-system/type (make-basic-type) base :is-final nil)))
     new))
@@ -582,7 +582,7 @@
 ;; Make this type as final
 
 (defun basic-type-set-final (this)
-  (setf (basic-type-is-final this) T))
+  (setf (basic-type-is-final this) t))
 
 ;; ----------------------------------------------------------------------------
 ;; Bitfield
@@ -606,7 +606,7 @@
 (defmethod to-str ((this sbitfield))
   (format nil "[~a ~a] sz ~a off ~a"
           (sbitfield-name this)
-          (inspect (sbitfield-type this))
+          (to-str (sbitfield-type this))
           (sbitfield-size this)
           (sbitfield-offset this)))
 
@@ -620,7 +620,7 @@
     (my/with-slots r. (sbitfield type name offset size skip-in-static-decomp) other
       (let ((result ""))
         (when (!= l.type r.type)
-          (string-append! result (format nil "type: ~a vs. ~a~%" (inspect l.type) (inspect r.type))))
+          (string-append! result (format nil "type: ~a vs. ~a~%" (to-str l.type) (to-str r.type))))
         (when (!= l.name r.name)
           (string-append! result (format nil "name: ~a vs. ~a~%" l.name r.name)))
         (when (!= l.offset r.offset)
@@ -659,7 +659,7 @@
           do
              (string-append!
               result
-              (format nil "~a~%" (inspect it))))
+              (format nil "~a~%" (to-str it))))
     (string-append!
      result
      (format nil "Mem size: ~a, load size: ~a, signed ~a, align ~a~%"

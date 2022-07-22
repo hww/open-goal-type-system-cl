@@ -9,6 +9,7 @@
 (defmacro integer? (val) `(integerp ,val))
 (defmacro float? (val) `(floatp ,val))
 (defmacro symbol? (val) `(symbolp ,val))
+(defmacro keyword? (val) `(keywordp ,val))
 (defmacro string? (val) `(stringp ,val))
 (defmacro boolean? (obj) `(typep ,obj 'boolean))
 (defmacro number? (obj) `(numberp ,obj))
@@ -75,7 +76,7 @@
   (cond
     ((null v) v)
     ((stringp v) v)
-    ((symbolp v) (symbol-name v))
+    ((symbolp v) (string-downcase (symbol-name v)))
     (t (format nil "~a" v))))
 
 (defun string-append (&rest list)
@@ -389,7 +390,7 @@ defaults to CHAR= (for case-sensitive comparison)."
 (defmacro hash-clear! (hash)
   `(clrhash ,hash))
 (defmacro hash-remove! (hash key)
-  `(REMHASH ,key ,hash))
+  `(remhash ,key ,hash))
 (defun make-hash (&key (capacity 8) (test 'equal))
   (make-hash-table :size capacity :test test))
 (defmacro hash-has-key? (hash key)
@@ -425,7 +426,7 @@ defaults to CHAR= (for case-sensitive comparison)."
 	 (loop for field-name in fields
 	       collect (cons
 			;; local variable name
-			(intern (format nil "~a~a" pfx field-name))
+			(intern (string-upcase (format nil "~a~a" pfx field-name)))
 			;; slot name
 			field-name)))
        (expr-list
@@ -527,7 +528,7 @@ defaults to CHAR= (for case-sensitive comparison)."
     ((consp val)
      (cons (struct-to-list (car val))
            (struct-to-list (cdr val))))
-    (T val)))
+    (t val)))
 
 (defun list-to-struct! (dst src-alst)
   (let ((val-alst (struct-to-list dst)))
@@ -643,7 +644,7 @@ defaults to CHAR= (for case-sensitive comparison)."
   ;;(when (null? env) (setf env (make-sexpression-environment)))
   (let ((pos 0)
         (result '()))
-    (setf (READTABLE-CASE *READTABLE*) :PRESERVE)
+    ;(setf (READTABLE-CASE *READTABLE*) :PRESERVE)
     (loop
       (multiple-value-bind (exsp npos)
           (read-from-string str nil nil :start pos)
@@ -651,7 +652,7 @@ defaults to CHAR= (for case-sensitive comparison)."
           (return))
         (setf pos npos)
         (setf result (cons exsp result))))
-    (setf (READTABLE-CASE *READTABLE*) :UPCASE)
+    ;(setf (READTABLE-CASE *READTABLE*) :invert)
     (reverse result)))
 
 (defun read-file-sexpression (path)
@@ -661,7 +662,7 @@ defaults to CHAR= (for case-sensitive comparison)."
 (set-dispatch-macro-character #\# #\F ;dispatch on #F
     #'(lambda(s c n) nil))
 (set-dispatch-macro-character #\# #\T ;dispatch on #T
-    #'(lambda(s c n) T))
+    #'(lambda(s c n) t))
 
 ;; (defun get-location-string (obj &key (env nil))
 ;;   (if (null? env)

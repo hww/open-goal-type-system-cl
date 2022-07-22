@@ -35,7 +35,7 @@
 ;; Add a simple value type - don't use this outside of add-builtin-types as it
 ;; forces you to do things in the wrong order.
 
-(defun add-builtin-value-type (this parent type-name size &optional (boxed nil) (sign-extend nil) (reg-kind REG-CLASS-GPR-64))
+(defun add-builtin-value-type (this parent type-name size &optional (boxed nil) (sign-extend nil) (reg-kind +reg-class-gpr-64+))
   ;;(->* (type-system? symbol? symbol? integer?) (boolean? boolean? integer?) void)
   (add-type this type-name (value-type-new parent type-name boxed size sign-extend reg-kind))
   (get-type-of-type this #'value-type-p type-name))
@@ -79,7 +79,7 @@
               (gtype-set-runtime-type  inline-array-type "pointer"))
 
       (add-builtin-value-type this "object" "number" 8)  ;; sign extend?
-      (add-builtin-value-type this "number" "float" 4 false false REG-CLASS-FLOAT)
+      (add-builtin-value-type this "number" "float" 4 false false +reg-class-float+)
       (add-builtin-value-type this "number" "integer" 8 false false)   ;; sign extend?
       (add-builtin-value-type this "integer" "binteger" 8 true false)  ;; sign extend?
       (add-builtin-value-type this "integer" "sinteger" 8 false true)
@@ -87,17 +87,17 @@
       (add-builtin-value-type this "sinteger" "int16" 2 false true)
       (add-builtin-value-type this "sinteger" "int32" 4 false true)
       (add-builtin-value-type this "sinteger" "int64" 8 false true)
-      (add-builtin-value-type this "sinteger" "int128" 16 false true REG-CLASS-INT-128)
+      (add-builtin-value-type this "sinteger" "int128" 16 false true +reg-class-int-128+)
       (add-builtin-value-type this "integer" "uinteger" 8)
       (add-builtin-value-type this "uinteger" "uint8" 1)
       (add-builtin-value-type this "uinteger" "uint16" 2)
       (add-builtin-value-type this "uinteger" "uint32" 4)
       (add-builtin-value-type this "uinteger" "uint64" 8)
-      (add-builtin-value-type this "uinteger" "uint128" 16 false false REG-CLASS-INT-128)
+      (add-builtin-value-type this "uinteger" "uint128" 16 false false +reg-class-int-128+)
 
       ;; (add special units types.
-      (let ((meters (add-builtin-value-type this "float" "meters" 4 false false REG-CLASS-FLOAT))
-            (degrees (add-builtin-value-type this "float" "degrees" 4 false false REG-CLASS-FLOAT))
+      (let ((meters (add-builtin-value-type this "float" "meters" 4 false false +reg-class-float+))
+            (degrees (add-builtin-value-type this "float" "degrees" 4 false false +reg-class-float+))
             (seconds (add-builtin-value-type this "int64" "seconds" 8 false true)))
         (gtype-set-runtime-type meters "float")
         (gtype-set-runtime-type degrees "float")
