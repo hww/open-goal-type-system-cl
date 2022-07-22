@@ -1,36 +1,34 @@
-;; TEST +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+(in-package :type-system/test)
+(use-package :type-system)
 
-(module+ test
-  (require rackunit)
-  (let ((tsys (type-system-new)))
-    (add-builtin-types tsys)
-    ;; - - - - - - - - - - - - - - - - - -
+(defun run-defunum-test ()
+
+  (let ((tsys (type-system-new!)))
     ;; Simple test
-    (cond
-      (#f ;; <- make true for simple test
-       (define gs-psm-exp #'(defenum
-                              gs-psm
-                              :type uint32
-                              :bitfield #f
-                              (ct32 0)
-                              (ct24 1)
-                              (ct16 2)))
-       (define gs-psm (parse-defenum (cdr (syntax-e gs-psm-exp)) tsys))
-       (check-equal? (inspect gs-psm) "[EnumType] gs-psm"))
-      (else
+    (let* ((gs-psm-exp '(defenum
+                         gs-psm
+                         :type uint32
+                         :bitfield nil
+                         (ct32 0)
+                         (ct24 1)
+                         (ct16 2)))
+           (gs-psm (parse-defenum tsys (cdr gs-psm-exp))))
+      (check-equal? (to-str gs-psm) "[EnumType] gs-psm")))
+
+  (let ((tsys (type-system-new!)))
        ;; Large test
-       (printf "\n[START] Defenum test\n")
-       (printf "Reading file...\n")
-       (define expr (for-file-parse "goalc-all-types.gc"))
-       (printf "Parsing defenums...\n")
-       (define counter 0)
-       (for-each-in-list
-        expr
-        (lambda (e)
-          (define fe (syntax-e e))
-          (when (list? fe)
-            (define first (syntax-e (car fe)))
-            (when (== first 'defenum)
-              (parse-defenum (cdr fe) tsys)
-              (+1! counter)))))
-       (printf "[END] ~a defenums parsing\n" counter)))))
+       (printf "~%[START] Defenum test~%")
+       (printf "Reading file...~%")
+       (let ((expr (read-file-sexpression "../tests/goalc-all-types.gc"))
+             (counter 0))
+         (printf "Parsing defenums...~%")
+
+         (loop for e in expr do
+           (when (list? e)
+             (let ((item (car e)))
+               (when (== (symbol-name item) "defenum")
+                 (parse-defenum tsys (cdr e))
+                 (1+! counter)))))
+         (printf "[END] ~a defenums parsing~%" counter)))
+
+  )

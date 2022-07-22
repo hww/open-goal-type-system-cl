@@ -201,14 +201,15 @@
 (declaim (ftype (function (gtype method-info) method-info) type-add-method))
 (defun gtype-add-method (this info)
   (let* ((id  (method-info-id info))
-	 (col (gtype-methods this))
-	 (len (arr-count col)))
+         (col (gtype-methods this))
+         (len (arr-count col))
+         (last (- len 1)))
     (dotimes (i len)
       ;; iterate backward
-      (let ((it (arr-ref col (- len i))))
+      (let ((it (arr-ref col (- last i))))
         (when (not (method-info-override it))
           (assert (== id (1+ (method-info-id it))))
-	  ;; stop iterating
+          ;; stop iterating
           (return t))))
     (arr-push (gtype-methods this) info)
     info))

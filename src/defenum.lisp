@@ -23,7 +23,12 @@
 
 (defun get-key (obj)
   "Return object starts with ':' character or null"
-  (if (is-key? obj) obj nil))
+  (if (is-key? obj)
+      (cond
+        ((stringp obj) obj)
+        ((symbolp obj) (symbol-name obj))
+        (t nil))
+      nil))
 
 (defun get-boolean (obj)
   "Return a boolean value or make error"
@@ -54,17 +59,18 @@
   ;; helper
   (defun is-type (expected actual)
     ;;(-> symbol? typespec? boolean?)
-    (tc this (make-typespec this expected) actual))
+    (tc this (make-a-typespec this expected) actual))
+
   ;; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   ;; default enum type will be int32.
-  (let* ((par-type (make-typespec this "int32"))
+  (let* ((par-type (make-a-typespec this "int32"))
          (is-bitfield nil)
          (entries (make-hash))
          (iter defenum)
          (enum-name (car iter)))
     ;; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     (setf iter (cdr iter))
-    (unless (symbolp enum-name)
+    (unless (symbol? enum-name)
       (error (format nil "defenum must be given a symbol as its name but found ~a" enum-name)))
     ;; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     (let ((other-info nil)
@@ -155,7 +161,7 @@
              (let* ((parent (get-type-of-type this #'value-type-p (base-type par-type)))
                     (new-type (enum-type-new parent enum-name is-bitfield entries)))
                (gtype-set-runtime-type new-type (gtype-runtime-name parent))
-               (add-type this enum-name new-type)
+               (add-type this (symbol-name enum-name) new-type)
                new-type))
             (else
              (error (format nil "Creating an enum with type `~a` is not allowed or not supported yet."

@@ -134,6 +134,7 @@
 ;; fully set up (fields, etc) before running this.
 
 (defun add-type (this name type)
+  (declare-fun add-type (type-system string gtype) gtype)
   ;;(-> type-system? symbol? type? (or/c nil type?))
   (let ((method-kv (forward-declared-method-counts-find this name)))
     (when method-kv
@@ -864,7 +865,8 @@
   (let ((iter-type type))
     (loop
       (cond
-        ((not iter-type) nil)
+        ((not iter-type)
+         (return nil))
         (else
          (let ((m (type-get-any-method iter-type method-name)))
            (cond
@@ -874,7 +876,7 @@
              (else
               (if (gtype-has-parent? iter-type)
                   (setf iter-type (lookup-type this (gtype-get-parent iter-type)))
-                  nil)))))))))
+                  (setf iter-type nil))))))))))
 
 ;; Lookup information on a method by ID number. Error if it can't be found. Will
 ;; check parent types if the given type doesn't specialize the method.
@@ -1054,7 +1056,7 @@
                            (array-size -1)
                            (offset-override -1)
                            (skip-in-static-decomp nil)
-                           (score 0))
+                           (score 0.0))
   ;;(->* (type-system? struct-type? symbolp typespec?)
   ;;     (boolean? boolean? integer? integer? boolean? real?)
   ;;     integer?)

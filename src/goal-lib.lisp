@@ -31,11 +31,19 @@
   `(not (equalp ,@args)))
 
 ;; ==============================================================================;;;
+;; Declaration
+;; ==============================================================================;;;
+
+(defmacro declare-fun (name args result)
+  `(declaim (ftype (function ,args ,result) ,name)))
+
+;; ==============================================================================;;;
 ;; Log
 ;; ==============================================================================;;;
 
 (defmacro log-warning (fmt &rest args) `(format t ,fmt ,@args))
 (defmacro log-debug (fmt &rest args) `(format t ,fmt ,@args))
+(defmacro printf (fmt &rest args) `(format t ,fmt ,@args))
 
 ;; ==============================================================================;;;
 ;;
@@ -359,7 +367,7 @@ defaults to CHAR= (for case-sensitive comparison)."
   `(setf (aref ,col ,idx) ,val))
 
 (defmacro arr-push (col val)
-  `(vector-push ,val ,col))
+  `(vector-push-extend ,val ,col))
 
 (defmacro arr-count (col)
   `(length ,col))
@@ -605,3 +613,64 @@ defaults to CHAR= (for case-sensitive comparison)."
        true)
       (else
        (assert false))))
+
+
+;; ==============================================================================
+;;
+;; ==============================================================================
+
+(defun make-sexpression-environment ()
+  (make-hash-table :test #'eq))
+
+(defun read-stream-sexpression (stream environment)
+  (let ((char (read-char stream)))
+    (or (position char "0123456789")
+        (and (member char '(#\newline #\space #\tab)) :space)
+        (case char
+          (#\) :closing-paren)
+          (#\( (loop
+                  with beg = (file-position stream)
+                  for x = (read-stream-sexpression stream environment)
+                  until (eq x :closing-paren)
+                  unless (eq x :space)
+                    collect x into items
+                  finally
+                    (setf (gethash items environment)
+                          (list :beg beg :end (file-position stream)))
+                   (return items)))))))
+
+(defun read-string-sexpression (str)
+  ;;(when (null? env) (setf env (make-sexpression-environment)))
+  (let ((pos 0)
+        (result '()))
+    (setf (READTABLE-CASE *READTABLE*) :PRESERVE)
+    (loop
+      (multiple-value-bind (exsp npos)
+          (read-from-string str nil nil :start pos)
+        (when (null exsp)
+          (return))
+        (setf pos npos)
+        (setf result (cons exsp result))))
+    (setf (READTABLE-CASE *READTABLE*) :UPCASE)
+    (reverse result)))
+
+(defun read-file-sexpression (path)
+  (let ((str (uiop:read-file-string path)))
+    (read-string-sexpression str)))
+
+(set-dispatch-macro-character #\# #\F ;dispatch on #F
+    #'(lambda(s c n) nil))
+(set-dispatch-macro-character #\# #\T ;dispatch on #T
+    #'(lambda(s c n) T))
+
+;; (defun get-location-string (obj &key (env nil))
+;;   (if (null? env)
+;;       "unknown-location"
+;;       (format nil "~a ~a:~a" )
+;;       ))
+
+;(let ((env (make-environment)))
+;  (with-input-from-string (in "(0(1 2 3) 4 5 (6 7))")
+;    (values
+;     (my-simple-lisp-reader in env)
+;     env)))

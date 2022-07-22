@@ -6,6 +6,8 @@
    :ex/defun
    :ex/defmacro
    ;;
+   :declare-fun
+   ;;
    :null?
    :integer?
    :float?
@@ -107,6 +109,14 @@
    ;;
    :log-error
    :log-warning
+   :log-debug
+   :printf
+   ;;
+   :make-sexpression-environment
+   :read-file-sexpression
+   :read-string-sexpression
+   :read-stream-sexpression
+   :get-location-string
    )
   )
 
@@ -527,6 +537,8 @@
    :type-system-old-types
    :type-system-allow-redefinition
    :type-system-new
+   :type-system-new!
+   ;;
    :forward-declare-type-as-type
    :forward-declared-types-find
    :make-a-typespec
@@ -536,7 +548,6 @@
    :lookup-type-allow-partial-def
    :inspect-all-type-information
    :get-path-up-tree
-   :types-find
    )
   (:reexport :goal-lib)
   (:reexport :type-system/interfaces)

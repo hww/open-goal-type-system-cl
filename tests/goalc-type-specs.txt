@@ -1,0 +1,135 @@
+uint8
+uint32
+uint16
+uint
+type
+symbol
+structure
+string
+stack-frame
+seconds
+scf-time
+process-tree
+process-mask
+process
+pointer
+pc-renderer-tree-type
+pc-prof-event
+pc-collision-mode
+pair
+object
+none
+meters
+memory-usage-block
+mc-status-code
+mc-slot-info
+link-flag
+language-enum
+kmalloc-flags
+kheap
+integer
+int64
+int32
+int
+function
+float
+file-stream
+entity-actor
+discord-info
+degrees
+cpad-info
+connectable
+binteger
+basic
+_varargs_
+_type_
+(pointer uint8)
+(pointer type)
+(pointer symbol)
+(pointer stack-frame)
+(pointer process-tree)
+(pointer process-mask)
+(pointer process)
+(pointer int32)
+(pointer float)
+(pointer basic)
+(pointer (pointer process-tree))
+(pointer (pointer process))
+(function uint)
+(function type int object none)
+(function symbol)
+(function symbol type type int _type_)
+(function symbol type string symbol _type_)
+(function symbol type object object _type_)
+(function symbol type int structure)
+(function symbol type int string _type_)
+(function symbol type int _type_)
+(function symbol type basic _type_)
+(function symbol type _type_)
+(function symbol none)
+(function symbol int pointer)
+(function symbol int none)
+(function string symbol)
+(function string string none)
+(function string pc-prof-event none)
+(function string none)
+(function string kheap object)
+(function string kheap link-flag int none)
+(function string function)
+(function scf-time none)
+(function pointer pointer uint none)
+(function pointer pointer int kheap int pointer)
+(function pointer int int int)
+(function pointer (pointer uint8) int kheap link-flag int)
+(function pc-renderer-tree-type int none)
+(function pc-collision-mode none)
+(function pc-collision-mode int symbol)
+(function pc-collision-mode int symbol none)
+(function object)
+(function object object)
+(function object object object)
+(function object object object none)
+(function object object none)
+(function object none)
+(function none)
+(function language-enum)
+(function language-enum int)
+(function kheap int kmalloc-flags string pointer)
+(function int)
+(function int uint)
+(function int uint uint uint int uint int uint)
+(function int uint mc-status-code)
+(function int pointer)
+(function int none)
+(function int mc-status-code)
+(function int mc-slot-info none)
+(function int int)
+(function int int pointer mc-status-code)
+(function int int pointer int mc-status-code)
+(function int int none)
+(function int int int)
+(function int int int int none)
+(function int function int)
+(function int (pointer int32) (pointer int32) (pointer int32) none)
+(function file-stream pointer uint uint)
+(function file-stream pointer int int)
+(function file-stream int)
+(function file-stream int int int)
+(function file-stream file-stream)
+(function file-stream basic basic file-stream)
+(function discord-info none)
+(function cpad-info int cpad-info)
+(function cpad-info cpad-info)
+(function basic none)
+(function _varargs_ object)
+(function _type_ symbol)
+(function _type_ symbol _type_)
+(function _type_ process-tree basic pointer process-tree)
+(function _type_ none)
+(function _type_ memory-usage-block int _type_)
+(function _type_ int)
+(function _type_ int _type_)
+(function _type_ entity-actor none)
+(function _type_ _type_)
+(function (pointer int32) (pointer int32) none)
+(function (pointer float) (pointer float) none)

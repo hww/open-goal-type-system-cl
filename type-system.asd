@@ -34,5 +34,6 @@
                (:file "type-test" :depends-on ("package" "test-lib"))
                (:file "basic-types-test" :depends-on ("package" "test-lib"))
                (:file "type-system-test" :depends-on ("package" "test-lib"))
+               (:file "defenum-test" :depends-on ("package" "test-lib"))
                (:file "main" :depends-on ("package" "typespec-test" "type-test" "basic-types-test" "type-system-test"))
                ))

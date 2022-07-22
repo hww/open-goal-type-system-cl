@@ -109,7 +109,8 @@
         (gtype-disallow-in-runtime uint-type))
 
       ;; Methods and Fields
-      (forward-declare-type-as this "'memory-usage-block" "basic")
+
+      (forward-declare-type-as this "memory-usage-block" "basic")
 
       ;; OBJECT
       (declare-method this obj-type "new" false (make-function-typespec this '("symbol" "type" "int") "_type_") false)
@@ -131,33 +132,33 @@
 
       ;; BASIC
       ;; we intentionally don"t" inherit from structure because structure"s" size is weird.
-      (add-field-to-type this basic-type "type" (make-typespec this "type"))
+      (add-field-to-type this basic-type "type" (make-a-typespec this "type"))
       ;; the default new basic doesn"t" support dynamic sizing. anything dynamic will override this
       ;; and then call (method object new) to do the dynamically-sized allocation.
       (declare-method this basic-type "new" false (make-function-typespec this '("symbol" "type") "_type_") false)
 
       ;; SYMBOL
       (builtin-structure-inherit this symbol-type)
-      (add-field-to-type this symbol-type "value" (make-typespec this "object"))
+      (add-field-to-type this symbol-type "value" (make-a-typespec this "object"))
       ;; a new method which returns type none means new is illegal.
       (declare-method this symbol-type "new" false (make-function-typespec this '() "none") false)
 
       ;; TYPE
       (builtin-structure-inherit this type-type)
       (declare-method this type-type "new" false (make-function-typespec this '("symbol" "type" "int") "_type_") false)
-      (add-field-to-type this type-type "symbol" (make-typespec this "symbol"))
-      (add-field-to-type this type-type "parent" (make-typespec this "type"))
-      (add-field-to-type this type-type "size" (make-typespec this "uint16"))  ;; actually u16
-      (add-field-to-type this type-type "psize" (make-typespec this "uint16"))  ;; todo u16 or s16. what really is this?
-      (add-field-to-type this type-type "heap-base" (make-typespec this "uint16"))         ;; todo
-      (add-field-to-type this type-type "allocated-length" (make-typespec this "uint16"))  ;; todo
-      (add-field-to-type this type-type "method-table" (make-typespec this "function") false true)
+      (add-field-to-type this type-type "symbol" (make-a-typespec this "symbol"))
+      (add-field-to-type this type-type "parent" (make-a-typespec this "type"))
+      (add-field-to-type this type-type "size" (make-a-typespec this "uint16"))  ;; actually u16
+      (add-field-to-type this type-type "psize" (make-a-typespec this "uint16"))  ;; todo u16 or s16. what really is this?
+      (add-field-to-type this type-type "heap-base" (make-a-typespec this "uint16"))         ;; todo
+      (add-field-to-type this type-type "allocated-length" (make-a-typespec this "uint16"))  ;; todo
+      (add-field-to-type this type-type "method-table" (make-a-typespec this "function") false true)
 
       ;; STRING
 
       (builtin-structure-inherit this string-type)
-      (add-field-to-type this string-type "allocated-length" (make-typespec this "int32"))   ;; todo integer type
-      (add-field-to-type this string-type "data" (make-typespec this "uint8") false true)  ;; todo integer type
+      (add-field-to-type this string-type "allocated-length" (make-a-typespec this "int32"))   ;; todo integer type
+      (add-field-to-type this string-type "data" (make-a-typespec this "uint8") false true)  ;; todo integer type
       ;; string is never deftype"d" for the decompiler so we need to manually give the constructor
       ;; type here.
       (declare-method this string-type "new" false (make-function-typespec this '("symbol" "type" "int" "string") "_type_") false)
@@ -168,51 +169,51 @@
 
       ;; VU FUNCTION
       ;; don"t" inherit
-      (add-field-to-type this vu-function-type "length" (make-typespec this "int32"))   ;; todo integer type
-      (add-field-to-type this vu-function-type "origin" (make-typespec this "int32"))   ;; todo sign extend?
-      (add-field-to-type this vu-function-type "qlength" (make-typespec this "int32"))  ;; todo integer type
-      (add-field-to-type this vu-function-type "data" (make-typespec this "uint8") false true)
+      (add-field-to-type this vu-function-type "length" (make-a-typespec this "int32"))   ;; todo integer type
+      (add-field-to-type this vu-function-type "origin" (make-a-typespec this "int32"))   ;; todo sign extend?
+      (add-field-to-type this vu-function-type "qlength" (make-a-typespec this "int32"))  ;; todo integer type
+      (add-field-to-type this vu-function-type "data" (make-a-typespec this "uint8") false true)
 
       ;; link block
       (builtin-structure-inherit this link-block-type)
-      (add-field-to-type this link-block-type "allocated-length" (make-typespec this "int32"))  ;; todo integer type
-      (add-field-to-type this link-block-type "version" (make-typespec this "int32"))  ;; todo integer type
+      (add-field-to-type this link-block-type "allocated-length" (make-a-typespec this "int32"))  ;; todo integer type
+      (add-field-to-type this link-block-type "version" (make-a-typespec this "int32"))  ;; todo integer type
       ;; there"s" probably some dynamically sized stuff after this...
 
       ;; kheap
-      (add-field-to-type this kheap-type "base" (make-typespec this "pointer"))
-      (add-field-to-type this kheap-type "top" (make-typespec this "pointer"))
-      (add-field-to-type this kheap-type "current" (make-typespec this "pointer"))
-      (add-field-to-type this kheap-type "top-base" (make-typespec this "pointer"))
+      (add-field-to-type this kheap-type "base" (make-a-typespec this "pointer"))
+      (add-field-to-type this kheap-type "top" (make-a-typespec this "pointer"))
+      (add-field-to-type this kheap-type "current" (make-a-typespec this "pointer"))
+      (add-field-to-type this kheap-type "top-base" (make-a-typespec this "pointer"))
 
       ;; todo
       (builtin-structure-inherit this array-type)
       (declare-method this array-type "new" false (make-function-typespec this '("symbol" "type" "type" "int") "_type_") false)
       ;; array has: number number type
-      (add-field-to-type this array-type "length" (make-typespec this "int32"))
-      (add-field-to-type this array-type "allocated-length" (make-typespec this "int32"))
-      (add-field-to-type this array-type "content-type" (make-typespec this "type"))
-      (add-field-to-type this array-type "data" (make-typespec this "uint8") false true)
+      (add-field-to-type this array-type "length" (make-a-typespec this "int32"))
+      (add-field-to-type this array-type "allocated-length" (make-a-typespec this "int32"))
+      (add-field-to-type this array-type "content-type" (make-a-typespec this "type"))
+      (add-field-to-type this array-type "data" (make-a-typespec this "uint8") false true)
 
       ;; pair
       (struct-type-override-offset pair-type 2)
       (declare-method this pair-type "new" false (make-function-typespec this '("symbol" "type" "object" "object") "_type_") false)
-      (add-field-to-type this pair-type "car" (make-typespec this "object"))
-      (add-field-to-type this pair-type "cdr" (make-typespec this "object"))
+      (add-field-to-type this pair-type "car" (make-a-typespec this "object"))
+      (add-field-to-type this pair-type "cdr" (make-a-typespec this "object"))
 
       ;; this type is very strange as the compiler knows about it in gkernel-h yet it is
       ;; defined inside of connect.
-      (add-field-to-type this connectable-type "next"0 (make-typespec this "connectable"))
-      (add-field-to-type this connectable-type "prev"0 (make-typespec this "connectable"))
-      (add-field-to-type this connectable-type "next"1 (make-typespec this "connectable"))
-      (add-field-to-type this connectable-type "prev"1 (make-typespec this "connectable"))
+      (add-field-to-type this connectable-type "next0" (make-a-typespec this "connectable"))
+      (add-field-to-type this connectable-type "prev0" (make-a-typespec this "connectable"))
+      (add-field-to-type this connectable-type "next1" (make-a-typespec this "connectable"))
+      (add-field-to-type this connectable-type "prev1" (make-a-typespec this "connectable"))
 
       ;; todo
       (builtin-structure-inherit this file-stream-type)
-      (add-field-to-type this file-stream-type "flags" (make-typespec this "uint32"))
-      (add-field-to-type this file-stream-type "mode" (make-typespec this "symbol"))
-      (add-field-to-type this file-stream-type "name" (make-typespec this "string"))
-      (add-field-to-type this file-stream-type "file" (make-typespec this "uint32"))
+      (add-field-to-type this file-stream-type "flags" (make-a-typespec this "uint32"))
+      (add-field-to-type this file-stream-type "mode" (make-a-typespec this "symbol"))
+      (add-field-to-type this file-stream-type "name" (make-a-typespec this "string"))
+      (add-field-to-type this file-stream-type "file" (make-a-typespec this "uint32"))
       (declare-method this file-stream-type "new" false (make-function-typespec this '("symbol" "type" "string" "symbol") "_type_") false)
       "Builtings Initialized"
       )))
@@ -225,6 +226,6 @@
 
 ;; Type spec text--------------------------------------------------------
 
-;(let ((this (type-system-new)))
-;  (add-builtin-types this)
-;  (print (inspect-all-type-information this)))
+;; (let ((this (type-system-new)))
+;;   (add-builtin-types this)
+;;   (print (inspect-all-type-information this)))

@@ -10,5 +10,6 @@
   (run-type-test)
   (run-basic-types-test)
   (run-type-system-test)
+  (run-defunum-test)
   )
 

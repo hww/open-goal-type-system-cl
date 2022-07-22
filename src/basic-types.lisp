@@ -18,7 +18,7 @@
 ;; ----------------------------------------------------------------------------
 
 (defstruct field
-  (name nil :type (or null symbol))   ; string?
+  (name nil :type (or null string))   ; string?
   (type nil :type (or null typespec)) ; type-spec?
   (offset -1 :type integer)           ; int? -1;
   (is-inline nil :type boolean)       ; bool? false does not make sense if m-type is value, and not an array and not dynamic
@@ -32,7 +32,7 @@
   (field-score 0.0 :type float)       ; double? = 0.;
   )
 
-(declaim (ftype (function (symbol typespec integer) field) field-new))
+(declaim (ftype (function (string typespec integer) field) field-new))
 (defun field-new (name type offset)
   "Constructor"
   (make-field :name name :type type :offset offset))
@@ -508,19 +508,19 @@
 
 (defun struct-type-inherit (this parent)
   ;;(-> struct-type? struct-type? void)
-  (setf (struct-type-fields this) (list->vector (vector->list (struct-type-fields parent))))
+  (setf (struct-type-fields this) (copy-array (struct-type-fields parent)))
   (setf (struct-type-dynamic this) (struct-type-dynamic parent))
   (setf (struct-type-size-in-mem this) (struct-type-size-in-mem parent))
   (setf (struct-type-idx-of-first-unique-field this) (arr-count (struct-type-fields parent))))
 
 (defun struct-type-add-field (this f new-size-in-mem)
-                                        ;(-> struct-type? field? integer? void)
+                                        ;;(-> struct-type? field? integer? void)
   (arr-push (struct-type-fields this) f)
-                                        ;(printf "ADD FIELD (~a) NEW-SIZE ~a~%" (inspect f) new-size-in-mem)
+                                        ;;(printf "ADD FIELD (~a) NEW-SIZE ~a~%" (inspect f) new-size-in-mem)
   (setf (struct-type-size-in-mem this) new-size-in-mem))
 
 (defun struct-type-get-size-in-memory (this)
-                                        ;  (-> struct-type? integer?)
+                                        ;;  (-> struct-type? integer?)
   (struct-type-size-in-mem this))
 
 (defun struct-type-override-size-in-memory (this size)
