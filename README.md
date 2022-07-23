@@ -38,7 +38,7 @@ For a futue development reuired only a bugfixing and making better error messagi
 - type-spec.lisp -- The universal type reference aka '(function (int int int))'
 - state.lisp -- The state type functions
 - type-system.lisp -- The main type system 
-- builting-types.lisp -- Initializer of type system by builting types
+- builtin-types.lisp -- Initializer of type system by builting types
 - defenum.lisp -- The enum expression parser
 - deftype.lisp -- The deftype expression parser
 - rt-type.lisp -- The runtime version of basic type. Not used by type system above
