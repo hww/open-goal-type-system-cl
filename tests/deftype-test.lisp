@@ -19,7 +19,7 @@
 	;; Large test
 	(printf "~%[START] Deftype parsing test~%")
 	(printf "Reading file...~%")
-    (let ((expr (read-file-sexpression "../tests/goalc-all-types.gc"))
+    (let ((expr (read-file-sexpression "./tests/goalc-all-types.gc"))
 	  (deftype-cnt 0)
 	  (defenum-cnt 0)
 	  (constants (make-hash)))

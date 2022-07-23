@@ -19,7 +19,7 @@
        ;; Large test
        (printf "~%[START] Defenum test~%")
        (printf "Reading file...~%")
-       (let ((expr (read-file-sexpression "../tests/goalc-all-types.gc"))
+       (let ((expr (read-file-sexpression "./tests/goalc-all-types.gc"))
              (counter 0))
          (printf "Parsing defenums...~%")
 
