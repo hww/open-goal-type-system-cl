@@ -48,8 +48,8 @@
   (method-info-diff this other))
 ;(declaim (ftype (function (method-info method-info) string) method-info-diff))
 (defun method-info-diff (this other)  
-  (my/with-slots l- (method-info id name type defined-in-type no-virtual override) this
-    (my/with-slots r- (method-info id name type defined-in-type no-virtual override) other
+  (let-with-slots l- (method-info id name type defined-in-type no-virtual override) this
+    (let-with-slots r- (method-info id name type defined-in-type no-virtual override) other
       (let ((result ""))
 	(when (!= l-id r-id) (string-append! result (format nil "id: ~a vs. ~a~%" l-id r-id)))
 	(when (!= l-name r-name)
@@ -258,11 +258,11 @@
 
 (declaim (ftype (function (gtype gtype) string) gtype-diff))
 (defun gtype-diff (this other)
-  (my/with-slots l- (gtype methods states new-method-info
+  (let-with-slots l- (gtype methods states new-method-info
 			  new-method-info-defined generate-inspect
 			  parent name allow-in-runtime runtime-name
 			  is-boxed heap-base) this
-    (my/with-slots r- (gtype methods states new-method-info
+    (let-with-slots r- (gtype methods states new-method-info
 			    new-method-info-defined generate-inspect
 			    parent name allow-in-runtime runtime-name
 			    is-boxed heap-base) other

@@ -28,7 +28,7 @@ Differences from the Racket version:
 ## Status
 
 It is mostly works, the test code in deftype.rkt file parsing the file all-types.gc with 34k lines of code. As result it is defining 1539 types and 89 enums. 
-For a futue development reuired only a bugfixing and making better error messaging with Racket exeptions handling and Syntax locations.
+For a futue development reuired only a bugfixing and making better error messaging exeptions handling and source file locations.
 
 ## Files
 

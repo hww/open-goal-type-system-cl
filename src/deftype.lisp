@@ -29,7 +29,7 @@
 
 (defun type-flags-flag (flags)
   "Collect all flags to a single 64 bits word"
-  (my/with-slots nil (type-flags size heap-base methods pad) flags
+  (let-with-slots nil (type-flags size heap-base methods pad) flags
     (+ (logand size      #xFFFF)
        (ash (logand heap-base #xFFFF) 16)
        (ash (logand methods   #xFFFF) 32)
@@ -633,7 +633,7 @@
           (forward-declare-type-as this name "basic")
           ;; returns StructureDefResult
           (let ((sr (parse-structure-def this new-type field-list-obj options-obj constants-to-use)))
-            (my/with-slots sr-
+            (let-with-slots sr-
                 (defstruct-res generate-runtime-type
                   pack-me
                   allow-misaligned
@@ -661,7 +661,7 @@
           (struct-type-inherit new-type pto)
           (forward-declare-type-as this name "structure")
           (let ((sr (parse-structure-def this new-type field-list-obj options-obj constants-to-use)))
-            (my/with-slots sr- (defstruct-res
+            (let-with-slots sr- (defstruct-res
                                    generate-runtime-type
                                  pack-me
                                  allow-misaligned

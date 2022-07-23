@@ -32,13 +32,13 @@
    :string-append!
    :string-join
    :string-ref
-   :list->string
+   :list-to-string
    :string-to-one-line
    :append!
    ;;
    :list-ref
-   :vector->list
-   :list->vector
+   :vector-to-list
+   :list-to-vector
    ;;
    :arr-first
    :arr-last
@@ -59,6 +59,7 @@
    :make-hash
    :hash-has-key?
    ;;
+   :%
    :set!
    :inc
    :+!
@@ -86,14 +87,14 @@
    :logtesta?
    :/-0-guard
    :mod-0-guard
-   :float->int
+   :float-to-int
    ;;
    :align-n
    :align16
    :align64
    :bit-field
    ;;
-   :my/with-slots
+   :let-with-slots
    :update-struct
    :copy-parent-struct-func
    :copy-parent-struct

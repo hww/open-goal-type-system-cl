@@ -86,7 +86,7 @@
 ;; Diff
 
 (defmethod diff ((this typespec) (other typespec))
- ; (list->string (sexp-diff this other))
+ ; (list--to-string (sexp-diff this other))
   "TODO")
 
 ;; The inspector for type spec

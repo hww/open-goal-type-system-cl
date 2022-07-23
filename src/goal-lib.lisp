@@ -5,6 +5,24 @@
 ;; ==============================================================================;;;;
 
 (defconstant else t)
+(defconstant true t)
+(defconstant false nil)
+
+(defconstant int8-max   128)
+(defconstant int8-min  -127)
+(defconstant int16-max  32767)
+(defconstant int16-min  -32768)
+(defconstant int32-max  2147483647)
+(defconstant int32-min -2147483648)
+
+(defconstant uint8-max  255)
+(defconstant uint16-max 65535)
+(defconstant uint32-max 4294967295)
+
+;; ==============================================================================;;;;
+;; Predicates
+;; ==============================================================================;;;;
+
 (defmacro null? (val) `(null ,val))
 (defmacro integer? (val) `(integerp ,val))
 (defmacro float? (val) `(floatp ,val))
@@ -14,86 +32,77 @@
 (defmacro boolean? (obj) `(typep ,obj 'boolean))
 (defmacro number? (obj) `(numberp ,obj))
 (defmacro list? (obj) `(listp ,obj))
+(defmacro equal? (&rest args) `(equalp ,@args))
+(defmacro notequal? (&rest args) `(not (equalp ,@args)))
+(defmacro == (&rest args) `(equalp ,@args))
+(defmacro != (&rest args) `(not (equalp ,@args)))
 
-
-(defconstant true t)
-(defconstant false nil)
-
-(defmacro equal? (&rest args)
-  `(equalp ,@args))
-
-(defmacro notequal? (&rest args)
-  `(not (equalp ,@args)))
-
-(defmacro == (&rest args)
-  `(equalp ,@args))
-
-(defmacro != (&rest args)
-  `(not (equalp ,@args)))
+;; helper
+(defun integer-fits? (in size is-signed)
+    (cond
+      ((== 1 size)
+       (if is-signed
+           (and (>= in int8-min) (<= in int8-max))
+           (and (>= in 0) (<= in uint8-max))))
+      ((== 2 size)
+       (if is-signed
+           (and (>= in int16-min) (<= in int16-max))
+           (and (>= in 0) (<= in uint16-max))))
+      ((== 4 size)
+       (if is-signed
+           (and (>= in int32-min) (<= in int32-max))
+           (and (>= in 0) (<= in uint32-max))))
+      ((== 8 size)
+       true)
+      (else
+       (assert false))))
 
 ;; ==============================================================================;;;
-;; Declaration
+;; Declaration. A short way to declaim function
 ;; ==============================================================================;;;
 
 (defmacro declare-fun (name args result)
+  "Usage: (declare-fun (name (args) result)"
   `(declaim (ftype (function ,args ,result) ,name)))
 
-;; ==============================================================================;;;
+;; ==============================================================================
 ;; Log
-;; ==============================================================================;;;
+;; ==============================================================================
 
 (defmacro log-warning (fmt &rest args) `(format t ,fmt ,@args))
 (defmacro log-debug (fmt &rest args) `(format t ,fmt ,@args))
 (defmacro printf (fmt &rest args) `(format t ,fmt ,@args))
 
-;; ==============================================================================;;;
-;;
-;; ==============================================================================;;;;
-
-(cl:defmacro ex/defconstant (&whole whole
-                          name initial-value &optional documentation)
-  (declare (ignore initial-value documentation))
-  `(progn
-     (export ',name)
-     (cl:defconstant ,name ,@(cddr whole))))
-
-(cl:defmacro ex/defmacro (name lambda-list &body body)
-  `(progn
-     (export ',name)
-     (defmacro ,name ,lambda-list ,@body)))
-
-
-(cl:defmacro ex/defun (name lambda-list &body body)
-  `(progn
-     (export ',name)
-     (defun ,name ,lambda-list ,@body)))
-
-;; ==============================================================================;;;;
+;; ==============================================================================;
 ;; STRING TOOLS
-;; ==============================================================================;;;;
+;; ==============================================================================;
 
 (defun stringify (v)
+  "Convert any object to string"
   (cond
-    ((null v) v)
-    ((stringp v) v)
-    ((symbolp v) (string-downcase (symbol-name v)))
+    ((null? v) v)
+    ((string? v) v)
+    ((keyword? v) (string-downcase (symbol-name v)))
+    ((symbol? v) (string-downcase (symbol-name v)))
     (t (format nil "~a" v))))
 
 (defun string-append (&rest list)
+  "Apend string arguments"
   (format nil "~{~a~}" (remove nil list)))
 
 (defmacro string-append! (var &rest list)
+  "Append string in place"
   `(setf ,var (format nil "~{~a~}" (remove nil (list ,var ,@list)))))
 
-
 (defun string-join (list &optional (delim "&"))
-    (with-output-to-string (s)
-        (when list
-            (format s "~A" (first list))
-            (dolist (element (rest list))
+  "Joint strings in the list"
+  (with-output-to-string (s)
+    (when list
+      (format s "~A" (first list))
+      (dolist (element (rest list))
 	      (format s "~A~A" delim element)))))
 
-(defun list->string (lst)
+(defun list-to-string (lst)
   (format nil "~{~A~}" lst))
 
 (defun string-substring (needle haystack &key (test 'char=))
@@ -111,53 +120,41 @@ defaults to CHAR= (for case-sensitive comparison)."
 (defmacro string-ref (str idx)
   `(char ,str ,idx))
 
-;;;;;;;;;;;;;;;;;;;
+;; ==============================================================================;
 ;; Math Macros
-;;;;;;;;;;;;;;;;;;;
+;; ==============================================================================;
+
+(defmacro % (x y)
+  `(mod ,x ,y))
 
 (defmacro set! (place value)
-  `(setf ,place ,value)
-  )
-
-;; (defmacro 1+ (var)
-;;   `(+ ,var 1)
-;;   )
+  `(setf ,place ,value))
 
 (defmacro inc (val)
   "Increments a value"
   `(1+ ,val))
 
 (defmacro +! (place amount)
-  `(set! ,place (+ ,place ,amount))
-  )
+  `(set! ,place (+ ,place ,amount)))
 
 (defmacro 1+! (place)
-  `(+! ,place 1)
-  )
-
-;; (defmacro 1- (var)
-;;   `(+ ,var -1)
-;;   )
+  `(+! ,place 1))
 
 (defmacro dec (val)
   "Decrements a value"
   `(1- ,val))
 
 (defmacro -! (place amount)
-  `(set! ,place (- ,place ,amount))
-  )
+  `(set! ,place (- ,place ,amount)))
 
 (defmacro 1-! (place)
-  `(-! ,place 1)
-  )
+  `(-! ,place 1))
 
 (defmacro *! (place amount)
-  `(set! ,place (* ,place ,amount))
-  )
+  `(set! ,place (* ,place ,amount)))
 
 (defmacro /! (place amount)
-  `(set! ,place (/ ,place ,amount))
-  )
+  `(set! ,place (/ ,place ,amount)))
 
 (defmacro zero? (thing)
   `(eq? ,thing 0)
@@ -239,48 +236,33 @@ defaults to CHAR= (for case-sensitive comparison)."
 
 (defmacro logtest? (a b)
   "does a have any of the bits in b?"
-  `(nonzero? (logand ,a ,b))
-  )
+  `(nonzero? (logand ,a ,b)))
 
 (defmacro logtesta? (a b)
   "does a have ALL of the bits in b?"
-  `(= (logand ,b ,a) ,b)
-  )
-#|
-(defmacro deref (t addr &rest fields)
-  `(-> (the-as (pointer ,t) ,addr) ,@fields)
-  )
+  `(= (logand ,b ,a) ,b))
 
-(defmacro &deref (t addr &rest fields)
-  `(&-> (the-as (pointer ,t) ,addr) ,@fields)
-  )
+(defmacro lsh-32 (val shift)
+  "Logical shift 32 bits (no sign extention)"
+  `(logand #xffffffff (ash #xffffffff) (ash ,val ,shift)))
 
-(defmacro shift-arith-right-32 (result in sa)
-  `(set! ,result (sext32 (sar (logand #xffffffff (the-as int ,in)) ,sa)))
-  )
-|#
 (defmacro /-0-guard (a b)
   "same as divide but returns -1 when divisor is zero (EE-like)."
   `(let ((divisor ,b))
       (if (zero? divisor)
           -1
-          (/ ,a divisor))
-      )
-  )
+          (/ ,a divisor))))
 
 (defmacro mod-0-guard (a b)
   "same as modulo but returns the dividend when divisor is zero (EE-like)."
   `(let ((divisor ,b))
       (if (zero? divisor)
           ,a
-          (mod ,a divisor))
-      )
-  )
+          (mod ,a divisor))))
 
-(defmacro float->int (a)
+(defmacro float-to-int (a)
   "forcefully casts something as a float to int. be careful."
-  `(the integer (round (the float ,a)))
-  )
+  `(the integer (round (the float ,a))))
 
 ;; ==============================================================================
 ;; Bit Macros
@@ -288,16 +270,13 @@ defaults to CHAR= (for case-sensitive comparison)."
 
 (defmacro align-n (val n)
   "align val to n-byte boundaries"
-  `(logand (- ,n) (+ (round ,val) (- ,n 1)))
-  )
+  `(logand (- ,n) (+ (round ,val) (- ,n 1))))
 
 (defmacro align16 (val)
-  `(align-n ,val 16)
-  )
+  `(align-n ,val 16))
 
 (defmacro align64 (val)
-  `(align-n ,val 64)
-  )
+  `(align-n ,val 64))
 
 (defmacro bit-field (val base size &optional (signed t))
   "extract bits from an integer value."
@@ -312,31 +291,30 @@ defaults to CHAR= (for case-sensitive comparison)."
   `(,(if signed 'sar 'shr) (shl ,val (- 64 (+ ,size ,base))) (- 64 ,size))
   )
 
-;; ==============================================================================;;;;
+;; ==============================================================================
 ;; LIST
-;; ==============================================================================;;;;
+;; ==============================================================================
 
 (defmacro list-ref (list n)
   `(nth ,n ,list))
 
-(defun list->vector (list)
+(defun list-to-vector (list)
   (coerce list 'vector))
 
-(defun vector->list (array)
+(defun vector-to-list (array)
   (coerce array 'list))
 
 (defmacro append! (list v)
   `(setf ,list (append ,list (cons ,v nil))))
 
-;; ==============================================================================;;;;
+;; ==============================================================================
 ;; ARRAYS
-;; ==============================================================================;;;;
+;; ==============================================================================
 
 (defun arr-new (&key (capacity 8) (element-type nil)) 
   (if element-type
       (make-array capacity :fill-pointer 0 :adjustable t :element-type element-type)
-      (make-array capacity :fill-pointer 0 :adjustable t)
-      ))
+      (make-array capacity :fill-pointer 0 :adjustable t)))
 
 (defmacro arr-first (coll)
   "Returns the first element in an array"
@@ -354,7 +332,7 @@ defaults to CHAR= (for case-sensitive comparison)."
   "Returns the index of an item in an array, returns <def> if is nothing is found."
   `(block find-element
     (dotimes (i (length ,coll))
-      (if (= ,val (-> ,coll i))
+      (if (= ,val (arr-ref ,coll i))
         (return-from find-element i)))
     ,def))
 
@@ -399,51 +377,51 @@ defaults to CHAR= (for case-sensitive comparison)."
 ;; ==============================================================================
 ;; The structure helpers
 ;; ==============================================================================
-
+;;
 ;; Same as with-slots but can rename fields less verbose
 ;;
 ;; Usage:
 ;;
 ;; (defstruct v3 x y z)
 ;; (defvar v (make-v3 :x 10 :y 20 :z 30))
-;; (my/with-slots f- (v3 x y z) v
+;; (let-with-slots f- (v3 x y z) v
 ;;    (format t "~a ~a ~a" f-x f-y f-x))
 ;;
 ;; (defun foo ()
-;;    (my/with-slots foo- (v3 x y z ) (make-v3 :x 10 :y 20 :z 30)
-;;      (my/with-slots bar- (v3 x y z ) (make-v3 :x 40 :y 50 :z 60)
+;;    (let-with-slots foo- (v3 x y z ) (make-v3 :x 10 :y 20 :z 30)
+;;      (let-with-slots bar- (v3 x y z ) (make-v3 :x 40 :y 50 :z 60)
 ;;        (format t "FOO x ~a y ~a z ~a~%" foo-x foo-y foo-z)
 ;;        (format t "BAR x ~a y ~a z ~a~%" bar-x bar-y bar-z))))
 ;; (foo)
 
-(defmacro my/with-slots (prefix (struct &rest fields) obj &body body)
+(defmacro let-with-slots (prefix (struct &rest fields) obj &body body)
   (assert struct) ; TODO kill the parameter STRUCT
   (let*
       ;; make empty prefix for nil
       ((pfx (if (null prefix) "" prefix))
        ;; make a list of fields and accessors
        (symbol-list
-	 (loop for field-name in fields
-	       collect (cons
-			;; local variable name
-			(intern (string-upcase (format nil "~a~a" pfx field-name)))
-			;; slot name
-			field-name)))
+         (loop for field-name in fields
+               collect (cons
+                        ;; local variable name
+                        (intern (string-upcase (format nil "~a~a" pfx field-name)))
+                        ;; slot name
+                        field-name)))
        (expr-list
-	 (loop for f in symbol-list
-	       collect `(,(car f) (slot-value ,obj ',(cdr f))))))
+         (loop for f in symbol-list
+               collect `(,(car f) (slot-value ,obj ',(cdr f))))))
     `(let (,@expr-list) ,@body)))
 
 
 ;; Copy the structure and override some of values
 ;;
-;; CL-USER> (defstruct foo bar baz)
+;; > (defstruct foo bar baz)
 ;; FOO
-;; CL-USER> (defparameter *first* (make-foo :bar 3))
+;; > (defparameter *first* (make-foo :bar 3))
 ;; *FIRST*
-;; CL-USER> (defparameter *second* (update-struct *first* 'baz 2))
+;; > (defparameter *second* (update-struct *first* 'baz 2))
 ;; *SECOND*
-;; CL-USER> (values *first* *second*)
+;; > (values *first* *second*)
 ;; #S(FOO :BAR 3 :BAZ NIL)
 ;; #S(FOO :BAR 3 :BAZ 2)
 
@@ -453,37 +431,8 @@ defaults to CHAR= (for case-sensitive comparison)."
     for (slot value) on bindings by #'cddr
     do
        (let ((slot-name (find-symbol (symbol-name slot))))
-	 (setf (slot-value copy slot-name) value))
+         (setf (slot-value copy slot-name) value))
     finally (return copy)))
-
-
-
-
-;; ==============================================================================
-;;
-;; ==============================================================================
-;; (my/defun foo (a b)
-;;   (var x 2)
-;;   (var y 3)
-;;   (* x y a b))
-;;
-;; (foo 4 5)
-;; ; => 120
-
-(defun my/vardecl-p (x)
-  "Return true if X is a (VAR NAME VALUE) form."
-  (and (listp x)
-       (> (length x) 1)
-       (eq 'var (car x))))
-
-(defmacro my/defun (name args &rest body)
-  "Special form of DEFUN with a flatter format for LET vars"
-  (let ((vardecls (mapcar #'cdr
-                          (remove-if-not #'my/vardecl-p body)))
-        (realbody (remove-if #'my/vardecl-p body)))
-    `(defun ,name ,args
-       (let* ,vardecls
-         ,@realbody))))
 
 ;; ==============================================================================
 ;; Structure to list and back
@@ -541,11 +490,19 @@ defaults to CHAR= (for case-sensitive comparison)."
     (list-to-struct! copy src-alst)
     copy))
 
-;; (defstruct foo x)
-;; (defstruct bar x y)
-;; (defparameter-foo :x 1))
-;; (defparameter y (make-bar 4list-to-))
-;; (defparameter z (struct-to-list x))
+;; ==============================================================================
+;; Copy structure
+;; ==============================================================================
+
+;; Copy structure to structure and update some of slots
+;;
+;; Usage:
+;;
+;; (defstruct baz-t x y z)
+;; (defvar baz (make-baz-t :x 1 :y 2 :z 3))
+;; (defvar bazz (make-baz-t :x 4 :y 5 :z 6))
+;; (print (copy-parent-struct bazz baz :x 100))
+
 
 (defun copy-parent-struct-func (pkg dst src &rest bindings)
   "Copy src structur to dst stracture and use additional bindings"
@@ -561,17 +518,9 @@ defaults to CHAR= (for case-sensitive comparison)."
   `(copy-parent-struct-func *package* ,dst ,src ,@bindings))
 
 
-;(defstruct baz-t x y z)
-;(defvar baz (make-baz-t :x 1 :y 2 :z 3))
-;(defvar bazz (make-baz-t :x 4 :y 5 :z 6))
-
-;(print (copy-parent-struct bazz baz :x 100))
-
-
 ;; ==============================================================================
 ;; Conditional
 ;; ==============================================================================
-
 
 (defmacro move-if-not-zero (result value check original)
     `(if (!= ,check 0)
@@ -584,46 +533,63 @@ defaults to CHAR= (for case-sensitive comparison)."
          (setf ,dest 1)
          (setf ,dest 0)))
 
-(defconstant INT8-MAX   128)
-(defconstant INT8-MIN  -127)
-(defconstant INT16-MAX  32767)
-(defconstant INT16-MIN  -32768)
-(defconstant INT32-MAX  2147483647)
-(defconstant INT32-MIN -2147483648)
-
-(defconstant UINT8-MAX  255)
-(defconstant UINT16-MAX 65535)
-(defconstant UINT32-MAX 4294967295)
-
-;; helper
-(defun integer-fits? (in size is-signed)
-    (cond
-      ((== 1 size)
-       (if is-signed
-           (and (>= in INT8-MIN) (<= in INT8-MAX))
-           (and (>= in 0) (<= in UINT8-MAX))))
-      ((== 2 size)
-       (if is-signed
-           (and (>= in INT16-MIN) (<= in INT16-MAX))
-           (and (>= in 0) (<= in UINT16-MAX))))
-      ((== 4 size)
-       (if is-signed
-           (and (>= in INT32-MIN) (<= in INT32-MAX))
-           (and (>= in 0) (<= in UINT32-MAX))))
-      ((== 8 size)
-       true)
-      (else
-       (assert false))))
-
-
 ;; ==============================================================================
+;; The case insensitive lisp may require some of case sensitive readers
+;; ==============================================================================;;;
+
+(defun make-case-preserving-readtable (&optional (from *readtable*))
+  "Make case sensitive reader"
+  (let ((r (copy-readtable from)))
+    (setf (readtable-case r) ':preserve)
+    ;; First make #F and #T of the GOAL readable
+    (set-dispatch-macro-character #\# #\F ;dispatch on #F
+                                  #'(lambda(s c n)
+                                      (declare (ignore s))
+                                      (declare (ignore c))
+                                      (declare (ignore n))
+                                      nil)
+                                  r)
+    (set-dispatch-macro-character #\# #\T ;dispatch on #T
+                                  #'(lambda(s c n)
+                                      (declare (ignore s))
+                                      (declare (ignore c))
+                                      (declare (ignore n))
+                                      t)
+                                  r)
+
+    r))
+
+;; Create one instance of case sensitive reader
+(defparameter *case-preserving-readtable* (make-case-preserving-readtable))
+
+
+;; Read from file with case preserving
 ;;
+;; Usage:
+;;
+;; (with-case-preserving-readtable
+;;    (format t "~&in: ")
+;;    (read))
+;; in: (foo :bar 1 |FOO|)
+;; > (|foo| :|bar| 1 foo)
+
+(defmacro with-case-preserving-readtable (&body forms)
+  "Read in the body of this macro will make case sensitive result"
+  `(let ((*readtable* *case-preserving-readtable*))
+     ,@forms))
+
+
 ;; ==============================================================================
+;; Sexpression reader
+;; ==============================================================================
+
 
 (defun make-sexpression-environment ()
+  "Make a debug environment for the reader"
   (make-hash-table :test #'eq))
 
 (defun read-stream-sexpression (stream environment)
+  "Not finished version of custom reader"
   (let ((char (read-char stream)))
     (or (position char "0123456789")
         (and (member char '(#\newline #\space #\tab)) :space)
@@ -641,37 +607,21 @@ defaults to CHAR= (for case-sensitive comparison)."
                    (return items)))))))
 
 (defun read-string-sexpression (str)
-  ;;(when (null? env) (setf env (make-sexpression-environment)))
+  "Read the string to the s-expression"
   (let ((pos 0)
         (result '()))
-    ;(setf (READTABLE-CASE *READTABLE*) :PRESERVE)
-    (loop
-      (multiple-value-bind (exsp npos)
-          (read-from-string str nil nil :start pos)
-        (when (null exsp)
-          (return))
-        (setf pos npos)
-        (setf result (cons exsp result))))
-    ;(setf (READTABLE-CASE *READTABLE*) :invert)
+    (with-case-preserving-readtable
+      (loop
+        (multiple-value-bind (exsp npos)
+            (read-from-string str nil nil :start pos)
+          (when (null exsp)
+            (return))
+          (setf pos npos)
+          (setf result (cons exsp result)))))
     (reverse result)))
 
 (defun read-file-sexpression (path)
+  "Reade the file to s-expression"
   (let ((str (uiop:read-file-string path)))
     (read-string-sexpression str)))
 
-(set-dispatch-macro-character #\# #\F ;dispatch on #F
-    #'(lambda(s c n) nil))
-(set-dispatch-macro-character #\# #\T ;dispatch on #T
-    #'(lambda(s c n) t))
-
-;; (defun get-location-string (obj &key (env nil))
-;;   (if (null? env)
-;;       "unknown-location"
-;;       (format nil "~a ~a:~a" )
-;;       ))
-
-;(let ((env (make-environment)))
-;  (with-input-from-string (in "(0(1 2 3) 4 5 (6 7))")
-;    (values
-;     (my-simple-lisp-reader in env)
-;     env)))

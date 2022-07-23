@@ -77,12 +77,12 @@
 (defmethod diff ((this field) (other field))
   (field-diff this other))
 (defmethod field-diff ((this field) (other field))  
-                                        ;(unless (field-p other) (error (incompatible-diff 'field other)))
-  (my/with-slots l- (field name type offset is-inline is-dynamic
+  ;;(unless (field-p other) (error (incompatible-diff 'field other)))
+  (let-with-slots l- (field name type offset is-inline is-dynamic
                            is-array array-size alignment
                            skip-in-static-decomp
                            ) this
-    (my/with-slots r- (field name type offset is-inline is-dynamic
+    (let-with-slots r- (field name type offset is-inline is-dynamic
                              is-array array-size alignment
                              skip-in-static-decomp
                              ) other
@@ -230,8 +230,8 @@
 
 (defmethod value-type-diff ((this value-type) (other value-type))
                                         ; (unless (value-type-p other) (error (incompatible-diff 'value-type other)))
-  (my/with-slots l. (value-type size offset sign-extend reg-kind) this
-    (my/with-slots r. (value-type size offset sign-extend reg-kind) other
+  (let-with-slots l. (value-type size offset sign-extend reg-kind) this
+    (let-with-slots r. (value-type size offset sign-extend reg-kind) other
 
       (let ((result ""))
         (string-append! result (gtype-diff this other))
@@ -386,10 +386,10 @@
   (struct-type-diff this other))
 (defmethod struct-type-diff ((this struct-type) (other struct-type))
                                         ;(unless (struct-type? other) (error (incompatible-diff 'struct-type other)))
-  (my/with-slots l- (struct-type
+  (let-with-slots l- (struct-type
                      fields dynamic size-in-mem pack allow-misalign offset
                      always-stack-singleton idx-of-first-unique-field) this
-    (my/with-slots r- (struct-type
+    (let-with-slots r- (struct-type
                        fields dynamic size-in-mem pack allow-misalign offset
                        always-stack-singleton idx-of-first-unique-field) other
       (let* ((l-fields.size (arr-count l-fields))
@@ -567,9 +567,9 @@
 
 (defmethod basic-type-diff ((this basic-type) (other basic-type))
   ;;(unless (basic-type-p other) (error (incompatible-diff 'basic-type other)))
-  (my/with-slots
+  (let-with-slots
       l- (basic-type is-final) this
-    (my/with-slots
+    (let-with-slots
         r- (basic-type is-final) other
       (string-append
        (flatten
@@ -616,8 +616,8 @@
 
 (defmethod sbitfield-diff ((this sbitfield) (other sbitfield))
                                         ;(unless (sbitfield-p other) (error (incompatible-diff 'sbitfield other)))
-  (my/with-slots l. (sbitfield type name offset size skip-in-static-decomp) this
-    (my/with-slots r. (sbitfield type name offset size skip-in-static-decomp) other
+  (let-with-slots l. (sbitfield type name offset size skip-in-static-decomp) this
+    (let-with-slots r. (sbitfield type name offset size skip-in-static-decomp) other
       (let ((result ""))
         (when (!= l.type r.type)
           (string-append! result (format nil "type: ~a vs. ~a~%" (to-str l.type) (to-str r.type))))
@@ -675,8 +675,8 @@
 
 (defmethod enum-type-diff ((this bitfield-type) (other bitfield-type))
                                         ;(unless (bitfield-type? other) (error (incompatible-diff 'bitfield-type other)))
-  (my/with-slots l- (bitfield-type fields) this
-    (my/with-slots r- (bitfield-type fields) other
+  (let-with-slots l- (bitfield-type fields) this
+    (let-with-slots r- (bitfield-type fields) other
       (let* ((l-fields-size (arr-count l-fields))
              (r-fields-size (arr-count r-fields))
              (min-fields (min l-fields-size r-fields-size))
@@ -744,8 +744,8 @@
 
 (defmethod diff ((this enum-type) (other enum-type))
                                         ;(unless (enum-type? other) (error (incompatible-diff 'enum-type other)))
-  (my/with-slots l- (enum-type is-bitfield entries) this
-    (my/with-slots r- (enum-type is-bitfield entries) other
+  (let-with-slots l- (enum-type is-bitfield entries) this
+    (let-with-slots r- (enum-type is-bitfield entries) other
       (let* ((l-entries-size (hash-count l-entries))
              (r-entries-size (hash-count r-entries))
              (result ""))
